@@ -1,7 +1,10 @@
-TWINE WORKBENCH MOD  v1.0.0   (for Twine 2.12.1)
-October 2026. An unofficial, unsupported Twine mod created with Claude.
-Not affiliated with or endorsed by the Twine project. Use at your own risk,
-and back up your story library first.
+QoL MOD FOR TWINE  v1.2.0   (for Twine 2.12.1)
+October 2026. An unofficial, unsupported modified build of Twine, created
+with Claude.
+Not affiliated with or endorsed by the Interactive Fiction Technology
+Foundation (IFTF) or the Twine project. Twine is a registered trademark of
+IFTF. Use at your own risk, and back up your story library first.
+Provided as is. No support is offered and bug reports are not accepted.
 
 WORKS WITH
 - Twine 2.12.1 desktop app only (this replaces the whole app file).
