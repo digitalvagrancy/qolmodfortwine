@@ -1,4 +1,4 @@
-TWINE WORKBENCH MOD  v1.0.0   (for Twine 2.12.1)
+TWINE QoL MOD  v1.0.0   (for Twine 2.12.1)
 October 2026. An unofficial, unsupported Twine mod created with Claude.
 Not affiliated with or endorsed by the Twine project. Use at your own risk,
 and back up your story library first.
