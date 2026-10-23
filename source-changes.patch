@@ -1,0 +1,1136 @@
+diff --git a/public/locales/en-US.json b/public/locales/en-US.json
+index cf5b47f..c72c201 100644
+--- a/public/locales/en-US.json
++++ b/public/locales/en-US.json
+@@ -57,6 +57,11 @@
+ 		"view": "View"
+ 	},
+ 	"components": {
++		"passageTagMenu": {
++			"noTags": "No tags yet. Add one from a passage editor first.",
++			"titleMany": "Tags for {{count}} passages",
++			"titleOne": "Tags for \"{{name}}\""
++		},
+ 		"addTagButton": {
+ 			"alreadyAdded": "This tag name has already been added.",
+ 			"addLabel": "Add Tag",
+@@ -169,6 +174,8 @@
+ 			"title": "Support Twine Development"
+ 		},
+ 		"appPrefs": {
++			"quickPasteText": "Quick Paste text",
++			"quickPasteTextHelp": "Inserted at the text cursor when you click Quick Paste in a passage editor.",
+ 			"codeEditorFont": "Code Editor Font",
+ 			"codeEditorFontScale": "Code Editor Font Size",
+ 			"dialogWidth": "Dialog Width",
+@@ -197,6 +204,9 @@
+ 		"passageEdit": {
+ 			"editorCrashed": "Something went wrong with this editor. Try closing it and editing this passage again.",
+ 			"passageTextEditorLabel": "Passage Text",
++			"pin": "Pin",
++			"quickPaste": "Quick Paste",
++			"quickPasteEmpty": "Quick Paste (set text in Preferences)",
+ 			"passageTextPlaceholder": "Enter the body text of your passage here. To link to another passage, put two square brackets around its name, [[like this]].",
+ 			"setAsStart": "Start Story Here",
+ 			"size": "Size",
+diff --git a/src/components/passage/__tests__/passage-card.test.tsx b/src/components/passage/__tests__/passage-card.test.tsx
+index 5db92d4..7312b3b 100644
+--- a/src/components/passage/__tests__/passage-card.test.tsx
++++ b/src/components/passage/__tests__/passage-card.test.tsx
+@@ -8,7 +8,6 @@ import {passageIsEmpty} from '../../../util/passage-is-empty';
+ import {PassageCard, PassageCardProps} from '../passage-card';
+ 
+ jest.mock('../../tag/tag-badges');
+-jest.mock('../../tag/tag-stripe');
+ jest.mock('../../../util/passage-is-empty');
+ 
+ describe('<PassageCard>', () => {
+@@ -107,12 +106,26 @@ describe('<PassageCard>', () => {
+ 	});
+ 
+ 	describe("When the tagDisplay prop is 'color'", () => {
+-		it("displays a <TagStripe> of passage tags", () => {
++		it('outlines the card with the colors of passage tags', () => {
+ 			const passage = fakePassage({tags: ['mock-tag-1', 'mock-tag-2']});
+ 
+-			renderComponent({passage});
+-			expect(screen.getByTestId('mock-tag-stripe')).toHaveTextContent(
+-				'mock-tag-1 mock-tag-2'
++			renderComponent({
++				passage,
++				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'none'}
++			});
++
++			const card = document.querySelector('.passage-card') as HTMLElement;
++
++			expect(card).toHaveClass('tag-outlined');
++			expect(card.style.boxShadow).toContain('var(--red)');
++		});
++
++		it("doesn't outline a card with no colored tags", () => {
++			const passage = fakePassage({tags: ['mock-tag-1']});
++
++			renderComponent({passage, tagColors: {}});
++			expect(document.querySelector('.passage-card')).not.toHaveClass(
++				'tag-outlined'
+ 			);
+ 		});
+ 
+diff --git a/src/components/passage/passage-card.css b/src/components/passage/passage-card.css
+index d8561f2..d393f3e 100644
+--- a/src/components/passage/passage-card.css
++++ b/src/components/passage/passage-card.css
+@@ -95,3 +95,7 @@
+ [data-app-theme='dark'] .passage-card.empty.selected .card {
+ 	background: hsla(212, 90%, 60%, 0.2);
+ }
++
++.passage-card.tag-outlined {
++	border-radius: var(--corner-round);
++}
+diff --git a/src/components/passage/passage-card.tsx b/src/components/passage/passage-card.tsx
+index e976d36..e28eceb 100644
+--- a/src/components/passage/passage-card.tsx
++++ b/src/components/passage/passage-card.tsx
+@@ -6,10 +6,9 @@ import {useTranslation} from 'react-i18next';
+ import {CardContent} from '../container/card';
+ import {SelectableCard} from '../container/card/selectable-card';
+ import {Passage, TagColors} from '../../store/stories';
+-import {TagStripe} from '../tag/tag-stripe';
+ import {passageIsEmpty} from '../../util/passage-is-empty';
+ import './passage-card.css';
+-import { TagBadges } from '../tag/tag-badges';
++import {TagBadges} from '../tag/tag-badges';
+ 
+ export interface PassageCardProps {
+ 	onEdit: (passage: Passage) => void;
+@@ -39,14 +38,35 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 		tagDisplay
+ 	} = props;
+ 	const {t} = useTranslation();
++	// In color mode, each colored tag draws a ring around the card, innermost
++	// ring first. Uncolored tags are ignored.
++
++	const outlineShadow = React.useMemo(() => {
++		if (tagDisplay !== 'color') {
++			return undefined;
++		}
++
++		const ringColors = passage.tags
++			.filter(tag => tagColors[tag] && tagColors[tag] !== 'none')
++			.map(tag => tagColors[tag]);
++
++		if (ringColors.length === 0) {
++			return undefined;
++		}
++
++		return ringColors
++			.map((color, index) => `0 0 0 ${(index + 1) * 3}px var(--${color})`)
++			.join(', ');
++	}, [passage.tags, tagColors, tagDisplay]);
+ 	const className = React.useMemo(
+ 		() =>
+ 			classNames('passage-card', {
+ 				empty: passageIsEmpty(passage),
+ 				selected: passage.selected,
+-				[`tag-display-${tagDisplay}`]: true
++				[`tag-display-${tagDisplay}`]: true,
++				'tag-outlined': !!outlineShadow
+ 			}),
+-		[passage, tagDisplay]
++		[outlineShadow, passage, tagDisplay]
+ 	);
+ 	const container = React.useRef<HTMLDivElement>(null);
+ 	const excerpt = React.useMemo(() => {
+@@ -66,12 +86,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 	}, [passage.text, t]);
+ 	const style = React.useMemo(
+ 		() => ({
++			boxShadow: outlineShadow,
+ 			height: passage.height,
+ 			left: passage.left,
+ 			top: passage.top,
+ 			width: passage.width
+ 		}),
+-		[passage.height, passage.left, passage.top, passage.width]
++		[outlineShadow, passage.height, passage.left, passage.top, passage.width]
+ 	);
+ 	const handleMouseDown = React.useCallback(
+ 		(event: MouseEvent) => {
+@@ -111,7 +132,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 			onDrag={onDrag}
+ 			onStop={onDragStop}
+ 		>
+-			<div className={className} ref={container} style={style} data-passage-tags={passage.tags.join(' ')}>
++			<div
++				className={className}
++				ref={container}
++				style={style}
++				data-passage-id={passage.id}
++				data-passage-tags={passage.tags.join(' ')}
++			>
+ 				<SelectableCard
+ 					highlighted={passage.highlighted}
+ 					label={passage.name}
+@@ -119,10 +146,11 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 					onSelect={handleSelect}
+ 					selected={passage.selected}
+ 				>
+-					{tagDisplay === 'color' && <TagStripe tagColors={tagColors} tags={passage.tags} />}
+ 					<h2>{passage.name}</h2>
+ 					<CardContent>{excerpt}</CardContent>
+-					{tagDisplay === 'name' && <TagBadges tagColors={tagColors} tags={passage.tags} />}
++					{tagDisplay === 'name' && (
++						<TagBadges tagColors={tagColors} tags={passage.tags} />
++					)}
+ 				</SelectableCard>
+ 			</div>
+ 		</DraggableCore>
+diff --git a/src/components/passage/passage-tag-menu.css b/src/components/passage/passage-tag-menu.css
+new file mode 100644
+index 0000000..b569eb9
+--- /dev/null
++++ b/src/components/passage/passage-tag-menu.css
+@@ -0,0 +1,66 @@
++@import '../../styles/metrics.css';
++
++.passage-tag-menu {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
++	color: var(--black);
++	display: flex;
++	flex-direction: column;
++	max-height: 70vh;
++	min-width: 200px;
++	overflow-y: auto;
++	padding: calc(var(--grid-size) / 2) 0;
++	position: fixed;
++	z-index: 3000;
++}
++
++.passage-tag-menu-title,
++.passage-tag-menu-empty {
++	font-size: 85%;
++	max-width: 280px;
++	opacity: 0.7;
++	overflow: hidden;
++	padding: calc(var(--grid-size) / 2) var(--grid-size);
++	text-overflow: ellipsis;
++	white-space: nowrap;
++}
++
++.passage-tag-menu-empty {
++	white-space: normal;
++}
++
++.passage-tag-menu-item {
++	align-items: center;
++	background: transparent;
++	border: 0;
++	color: inherit;
++	cursor: pointer;
++	display: flex;
++	font: inherit;
++	gap: calc(var(--grid-size) / 2);
++	padding: calc(var(--grid-size) / 2) var(--grid-size);
++	text-align: left;
++}
++
++.passage-tag-menu-item:hover,
++.passage-tag-menu-item:focus-visible {
++	background: var(--light-gray);
++	outline: none;
++}
++
++.passage-tag-menu-item .check {
++	display: inline-block;
++	text-align: center;
++	width: 1em;
++}
++
++.passage-tag-menu-item .swatch {
++	border: 1px solid var(--gray);
++	border-radius: 50%;
++	display: inline-block;
++	flex-shrink: 0;
++	height: 12px;
++	width: 12px;
++}
+diff --git a/src/components/passage/passage-tag-menu.tsx b/src/components/passage/passage-tag-menu.tsx
+new file mode 100644
+index 0000000..4c1c4aa
+--- /dev/null
++++ b/src/components/passage/passage-tag-menu.tsx
+@@ -0,0 +1,248 @@
++import * as React from 'react';
++import {useTranslation} from 'react-i18next';
++import {Story, storyPassageTags} from '../../store/stories';
++import {useUndoableStoriesContext} from '../../store/undoable-stories';
++import './passage-tag-menu.css';
++
++export interface PassageTagMenuProps {
++	story: Story;
++}
++
++interface MenuState {
++	passageIds: string[];
++	x: number;
++	y: number;
++}
++
++/**
++ * Right-click menu for passage cards in the story map. Lists the tags that
++ * already exist in the story and toggles them on the clicked passage (or on
++ * every selected passage, if the clicked one is part of a multiple selection).
++ */
++export const PassageTagMenu: React.FC<PassageTagMenuProps> = ({story}) => {
++	const {dispatch} = useUndoableStoriesContext();
++	const {t} = useTranslation();
++	const [menu, setMenu] = React.useState<MenuState | null>(null);
++	const menuRef = React.useRef<HTMLDivElement>(null);
++	const storyRef = React.useRef(story);
++	const rightDown = React.useRef<{x: number; y: number} | null>(null);
++
++	storyRef.current = story;
++
++	// Open on right-click of a passage card. Twine lets you pan the map by
++	// dragging with the right button, so we ignore right-clicks that moved.
++
++	React.useEffect(() => {
++		function handlePointerDown(event: PointerEvent) {
++			if (event.button === 2) {
++				rightDown.current = {x: event.clientX, y: event.clientY};
++			}
++		}
++
++		function handleContextMenu(event: MouseEvent) {
++			const start = rightDown.current;
++
++			rightDown.current = null;
++
++			if (
++				start &&
++				Math.hypot(event.clientX - start.x, event.clientY - start.y) > 4
++			) {
++				return;
++			}
++
++			const hit = document.elementFromPoint(event.clientX, event.clientY);
++			const card = hit?.closest<HTMLElement>('.passage-card[data-passage-id]');
++
++			if (!card || !card.dataset.passageId) {
++				setMenu(null);
++				return;
++			}
++
++			const current = storyRef.current;
++			const clicked = current.passages.find(
++				passage => passage.id === card.dataset.passageId
++			);
++
++			if (!clicked) {
++				return;
++			}
++
++			const selected = current.passages.filter(passage => passage.selected);
++			const passageIds =
++				clicked.selected && selected.length > 1
++					? selected.map(passage => passage.id)
++					: [clicked.id];
++
++			event.preventDefault();
++			setMenu({passageIds, x: event.clientX, y: event.clientY});
++		}
++
++		window.addEventListener('pointerdown', handlePointerDown, true);
++		window.addEventListener('contextmenu', handleContextMenu, true);
++		return () => {
++			window.removeEventListener('pointerdown', handlePointerDown, true);
++			window.removeEventListener('contextmenu', handleContextMenu, true);
++		};
++	}, []);
++
++	// Close on outside click, Escape, scrolling, resizing or losing focus.
++
++	React.useEffect(() => {
++		if (!menu) {
++			return;
++		}
++
++		function close() {
++			setMenu(null);
++		}
++
++		function handleMouseDown(event: MouseEvent) {
++			if (
++				event.button === 0 &&
++				!menuRef.current?.contains(event.target as Node)
++			) {
++				close();
++			}
++		}
++
++		function handleKeyDown(event: KeyboardEvent) {
++			if (event.key === 'Escape') {
++				close();
++			}
++		}
++
++		window.addEventListener('mousedown', handleMouseDown, true);
++		window.addEventListener('keydown', handleKeyDown, true);
++		window.addEventListener('wheel', close, true);
++		window.addEventListener('resize', close);
++		window.addEventListener('blur', close);
++		return () => {
++			window.removeEventListener('mousedown', handleMouseDown, true);
++			window.removeEventListener('keydown', handleKeyDown, true);
++			window.removeEventListener('wheel', close, true);
++			window.removeEventListener('resize', close);
++			window.removeEventListener('blur', close);
++		};
++	}, [menu]);
++
++	// Keep the menu on screen.
++
++	React.useLayoutEffect(() => {
++		const el = menuRef.current;
++
++		if (!menu || !el) {
++			return;
++		}
++
++		const rect = el.getBoundingClientRect();
++		const left = Math.max(
++			4,
++			Math.min(menu.x, window.innerWidth - rect.width - 4)
++		);
++		const top = Math.max(
++			4,
++			Math.min(menu.y, window.innerHeight - rect.height - 4)
++		);
++
++		el.style.left = `${left}px`;
++		el.style.top = `${top}px`;
++	}, [menu]);
++
++	if (!menu) {
++		return null;
++	}
++
++	const targets = story.passages.filter(passage =>
++		menu.passageIds.includes(passage.id)
++	);
++
++	if (targets.length === 0) {
++		return null;
++	}
++
++	// Tags that are in use, plus tags that still have a color set from earlier.
++
++	const tags = Array.from(
++		new Set([...storyPassageTags(story), ...Object.keys(story.tagColors)])
++	).sort((a, b) => a.localeCompare(b));
++
++	function toggle(tag: string) {
++		const allHave = targets.every(passage => passage.tags.includes(tag));
++		const storyId = story.id;
++		const changes = targets
++			.filter(passage => passage.tags.includes(tag) === allHave)
++			.map(passage => ({
++				id: passage.id,
++				tags: allHave
++					? passage.tags.filter(existing => existing !== tag)
++					: [...passage.tags, tag]
++			}));
++
++		// Dispatched directly (rather than via addPassageTag) so that an existing
++		// tag color is never reset.
++
++		dispatch(
++			innerDispatch => {
++				for (const change of changes) {
++					innerDispatch({
++						type: 'updatePassage',
++						passageId: change.id,
++						props: {tags: change.tags},
++						storyId
++					});
++				}
++			},
++			allHave ? 'undoChange.removeTag' : 'undoChange.addTag'
++		);
++		setMenu(null);
++	}
++
++	return (
++		<div
++			className="passage-tag-menu"
++			onContextMenu={event => event.preventDefault()}
++			ref={menuRef}
++			role="menu"
++			style={{left: menu.x, top: menu.y}}
++		>
++			<div className="passage-tag-menu-title">
++				{targets.length === 1
++					? t('components.passageTagMenu.titleOne', {name: targets[0].name})
++					: t('components.passageTagMenu.titleMany', {count: targets.length})}
++			</div>
++			{tags.length === 0 && (
++				<div className="passage-tag-menu-empty">
++					{t('components.passageTagMenu.noTags')}
++				</div>
++			)}
++			{tags.map(tag => {
++				const checked = targets.every(passage => passage.tags.includes(tag));
++				const some =
++					!checked && targets.some(passage => passage.tags.includes(tag));
++				const color = story.tagColors[tag];
++
++				return (
++					<button
++						aria-checked={checked ? 'true' : some ? 'mixed' : 'false'}
++						className="passage-tag-menu-item"
++						key={tag}
++						onClick={() => toggle(tag)}
++						role="menuitemcheckbox"
++						type="button"
++					>
++						<span className="check">{checked ? '✓' : some ? '–' : ''}</span>
++						<span
++							className="swatch"
++							style={{
++								background:
++									color && color !== 'none' ? `var(--${color})` : 'transparent'
++							}}
++						/>
++						<span className="name">{tag}</span>
++					</button>
++				);
++			})}
++		</div>
++	);
++};
+diff --git a/src/dialogs/app-prefs.css b/src/dialogs/app-prefs.css
+index c283632..8bb404b 100644
+--- a/src/dialogs/app-prefs.css
++++ b/src/dialogs/app-prefs.css
+@@ -28,3 +28,26 @@
+ .app-prefs-dialog input[type='text'] {
+ 	width: 100%;
+ }
++
++.app-prefs-dialog .quick-paste-pref {
++	display: flex;
++	flex-direction: column;
++	gap: calc(var(--grid-size) / 2);
++	grid-column: 1 / span 2;
++}
++
++.app-prefs-dialog .quick-paste-pref textarea {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: var(--black);
++	font-family: var(--font-monospaced);
++	padding: calc(var(--grid-size) / 2);
++	resize: vertical;
++	width: 100%;
++}
++
++.app-prefs-dialog .quick-paste-pref p {
++	margin: 0;
++	opacity: 0.75;
++}
+diff --git a/src/dialogs/app-prefs.tsx b/src/dialogs/app-prefs.tsx
+index a4576f6..5138d11 100644
+--- a/src/dialogs/app-prefs.tsx
++++ b/src/dialogs/app-prefs.tsx
+@@ -70,11 +70,32 @@ export const AppPrefsDialog: React.FC<
+ 				<TextSelect
+ 					onChange={e => dispatch(setPref('passageTagDisplay', e.target.value))}
+ 					options={[
+-						{label: t('dialogs.appPrefs.passageTagDisplays.color'), value: 'color'},
+-						{label: t('dialogs.appPrefs.passageTagDisplays.name'), value: 'name'}
++						{
++							label: t('dialogs.appPrefs.passageTagDisplays.color'),
++							value: 'color'
++						},
++						{
++							label: t('dialogs.appPrefs.passageTagDisplays.name'),
++							value: 'name'
++						}
+ 					]}
+ 					value={prefs.passageTagDisplay}
+-				>{t('dialogs.appPrefs.passageTagDisplay')}</TextSelect>
++				>
++					{t('dialogs.appPrefs.passageTagDisplay')}
++				</TextSelect>
++				<div className="quick-paste-pref">
++					<label htmlFor="quick-paste-text">
++						{t('dialogs.appPrefs.quickPasteText')}
++					</label>
++					<textarea
++						id="quick-paste-text"
++						onChange={e => dispatch(setPref('quickPasteText', e.target.value))}
++						rows={3}
++						spellCheck={false}
++						value={prefs.quickPasteText}
++					/>
++					<p>{t('dialogs.appPrefs.quickPasteTextHelp')}</p>
++				</div>
+ 				<CheckboxButton
+ 					disabled={!prefs.useCodeMirror}
+ 					label={t('dialogs.appPrefs.editorCursorBlinks')}
+diff --git a/src/dialogs/context/action-creators.ts b/src/dialogs/context/action-creators.ts
+index 3b47417..7e8c83f 100644
+--- a/src/dialogs/context/action-creators.ts
++++ b/src/dialogs/context/action-creators.ts
+@@ -1,6 +1,7 @@
+ import {Thunk} from 'react-hook-thunk-reducer';
+ import {DialogsAction, DialogsState} from '../dialogs.types';
+ import {PassageEditStack} from '../passage-edit';
++import {PassagePin} from '../passage-pin';
+ 
+ /**
+  * Adds a passage editor dialog, either creating a new stack for it or adding it
+@@ -96,3 +97,21 @@ export function removePassageEditors(
+ 		}
+ 	};
+ }
++
++/**
++ * Moves a passage editor out of the main editing stack and into its own pinned
++ * column.
++ */
++export function pinPassageEditor(
++	storyId: string,
++	passageId: string
++): Thunk<DialogsState, DialogsAction> {
++	return dispatch => {
++		dispatch({
++			type: 'addDialog',
++			component: PassagePin,
++			props: {storyId, passageId}
++		});
++		dispatch(removePassageEditors([passageId]));
++	};
++}
+diff --git a/src/dialogs/context/dialogs.css b/src/dialogs/context/dialogs.css
+index 1ee9feb..4a5de56 100644
+--- a/src/dialogs/context/dialogs.css
++++ b/src/dialogs/context/dialogs.css
+@@ -45,4 +45,28 @@
+ 	left: 0;
+ 	right: 0;
+ 	bottom: 0;
+-}
+\ No newline at end of file
++}
++
++/* Pinned passages: a second column to the left of the main dialogs. */
++
++.dialogs-pinned {
++	align-items: stretch;
++	bottom: var(--grid-size);
++	display: flex;
++	flex-direction: column;
++	grid-gap: var(--grid-size);
++	justify-content: flex-end;
++	pointer-events: none;
++	position: fixed;
++	top: calc(2 * var(--control-height) + var(--grid-size));
++}
++
++.dialogs-pinned .dialog-card {
++	flex: 1;
++	min-height: 0;
++	pointer-events: auto;
++}
++
++.dialogs-pinned .dialog-card.collapsed {
++	flex: 0;
++}
+diff --git a/src/dialogs/context/dialogs.tsx b/src/dialogs/context/dialogs.tsx
+index 17b2fad..9e6f01c 100644
+--- a/src/dialogs/context/dialogs.tsx
++++ b/src/dialogs/context/dialogs.tsx
+@@ -3,6 +3,7 @@ import {useScrollbarSize} from 'react-scrollbar-size';
+ import {CSSTransition, TransitionGroup} from 'react-transition-group';
+ import {useDialogsContext} from '.';
+ import {usePrefsContext} from '../../store/prefs';
++import {PassagePin} from '../passage-pin/passage-pin';
+ import './dialogs.css';
+ 
+ // TODO move this to separate module to avoid circular dep
+@@ -17,50 +18,83 @@ export const Dialogs: React.FC = () => {
+ 	const {prefs} = usePrefsContext();
+ 	const {dispatch, dialogs} = useDialogsContext();
+ 
+-	const hasUnmaximized = dialogs.some(dialog => !dialog.maximized);
++	// Pinned passages get their own column to the left of the main one. We keep
++	// each dialog's original index because the actions below refer to it.
++
++	const indexed = dialogs.map((dialog, index) => ({dialog, index}));
++	const mainDialogs = indexed.filter(
++		({dialog}) => dialog.component !== PassagePin
++	);
++	const pinnedDialogs = indexed.filter(
++		({dialog}) => dialog.component === PassagePin
++	);
++
++	const hasMain = mainDialogs.length > 0;
++	const hasUnmaximized = mainDialogs.some(({dialog}) => !dialog.maximized);
+ 	const containerStyle: React.CSSProperties = {
+ 		paddingLeft: `calc(100% - (${prefs.dialogWidth}px + 2 * (var(--grid-size))))`,
+ 		marginBottom: height,
+ 		marginRight: width
+ 	};
++	const pinnedStyle: React.CSSProperties = {
++		marginBottom: height,
++		right: hasMain
++			? `calc(${prefs.dialogWidth}px + 2 * var(--grid-size) + ${width}px)`
++			: `calc(var(--grid-size) + ${width}px)`,
++		width: `${prefs.dialogWidth}px`
++	};
+ 	const maximizedStyle: React.CSSProperties = {
+ 		marginRight: hasUnmaximized
+ 			? `calc(${prefs.dialogWidth}px + var(--grid-size))`
+ 			: 0
+ 	};
+ 
+-	return (
+-		<div className="dialogs" style={containerStyle}>
+-			<TransitionGroup component={null}>
+-				{dialogs.map((dialog, index) => {
+-					const managementProps = {
+-						collapsed: dialog.collapsed,
+-						highlighted: dialog.highlighted,
+-						maximized: dialog.maximized,
+-						onChangeCollapsed: (collapsed: boolean) =>
+-							dispatch({type: 'setDialogCollapsed', collapsed, index}),
+-						onChangeHighlighted: (highlighted: boolean) =>
+-							dispatch({type: 'setDialogHighlighted', highlighted, index}),
+-						onChangeMaximized: (maximized: boolean) =>
+-							dispatch({type: 'setDialogMaximized', maximized, index}),
+-						onChangeProps: (props: Record<string, any>) =>
+-							dispatch({type: 'setDialogProps', index, props}),
+-						onClose: () => dispatch({type: 'removeDialog', index})
+-					};
++	function renderDialog(
++		{dialog, index}: {dialog: (typeof dialogs)[number]; index: number},
++		maximizable: boolean
++	) {
++		const managementProps = {
++			collapsed: dialog.collapsed,
++			highlighted: dialog.highlighted,
++			maximized: dialog.maximized,
++			onChangeCollapsed: (collapsed: boolean) =>
++				dispatch({type: 'setDialogCollapsed', collapsed, index}),
++			onChangeHighlighted: (highlighted: boolean) =>
++				dispatch({type: 'setDialogHighlighted', highlighted, index}),
++			onChangeMaximized: (maximized: boolean) =>
++				dispatch({type: 'setDialogMaximized', maximized, index}),
++			onChangeProps: (props: Record<string, any>) =>
++				dispatch({type: 'setDialogProps', index, props}),
++			onClose: () => dispatch({type: 'removeDialog', index})
++		};
+ 
+-					return (
+-						<DialogTransition key={index}>
+-							{dialog.maximized ? (
+-								<div className="maximized" style={maximizedStyle}>
+-									<dialog.component {...dialog.props} {...managementProps} />
+-								</div>
+-							) : (
+-								<dialog.component {...dialog.props} {...managementProps} />
+-							)}
+-						</DialogTransition>
+-					);
+-				})}
+-			</TransitionGroup>
+-		</div>
++		return (
++			<DialogTransition key={index}>
++				{maximizable && dialog.maximized ? (
++					<div className="maximized" style={maximizedStyle}>
++						<dialog.component {...dialog.props} {...managementProps} />
++					</div>
++				) : (
++					<dialog.component {...dialog.props} {...managementProps} />
++				)}
++			</DialogTransition>
++		);
++	}
++
++	return (
++		<>
++			{pinnedDialogs.length > 0 && (
++				<div className="dialogs-pinned" style={pinnedStyle}>
++					<TransitionGroup component={null}>
++						{pinnedDialogs.map(item => renderDialog(item, false))}
++					</TransitionGroup>
++				</div>
++			)}
++			<div className="dialogs" style={containerStyle}>
++				<TransitionGroup component={null}>
++					{mainDialogs.map(item => renderDialog(item, true))}
++				</TransitionGroup>
++			</div>
++		</>
+ 	);
+ };
+diff --git a/src/dialogs/index.ts b/src/dialogs/index.ts
+index 13f1b48..73fa24f 100644
+--- a/src/dialogs/index.ts
++++ b/src/dialogs/index.ts
+@@ -5,6 +5,7 @@ export * from './context';
+ export * from './context/dialogs';
+ export * from './dialogs.types';
+ export * from './passage-edit';
++export * from './passage-pin';
+ export * from './passage-tags';
+ export * from './story-import';
+ export * from './story-javascript';
+diff --git a/src/dialogs/passage-edit/passage-edit-contents.tsx b/src/dialogs/passage-edit/passage-edit-contents.tsx
+index 284f120..424fa92 100644
+--- a/src/dialogs/passage-edit/passage-edit-contents.tsx
++++ b/src/dialogs/passage-edit/passage-edit-contents.tsx
+@@ -16,6 +16,7 @@ import {usePrefsContext} from '../../store/prefs';
+ 
+ export interface PassageEditContentsProps {
+ 	disabled?: boolean;
++	onPin?: () => void;
+ 	passageId: string;
+ 	storyId: string;
+ }
+@@ -23,7 +24,7 @@ export interface PassageEditContentsProps {
+ export const PassageEditContents: React.FC<
+ 	PassageEditContentsProps
+ > = props => {
+-	const {disabled, passageId, storyId} = props;
++	const {disabled, onPin, passageId, storyId} = props;
+ 	const [storyFormatExtensionsEnabled, setStoryFormatExtensionsEnabled] =
+ 		React.useState(true);
+ 	const [editorCrashed, setEditorCrashed] = React.useState(false);
+@@ -94,6 +95,7 @@ export const PassageEditContents: React.FC<
+ 			<PassageToolbar
+ 				disabled={disabled}
+ 				editor={cmEditor}
++				onPin={onPin}
+ 				passage={passage}
+ 				story={story}
+ 				useCodeMirror={prefs.useCodeMirror}
+diff --git a/src/dialogs/passage-edit/passage-edit-stack.tsx b/src/dialogs/passage-edit/passage-edit-stack.tsx
+index 36ecd9d..6a27758 100644
+--- a/src/dialogs/passage-edit/passage-edit-stack.tsx
++++ b/src/dialogs/passage-edit/passage-edit-stack.tsx
+@@ -14,6 +14,7 @@ import {
+ } from '../../store/stories';
+ import {
+ 	addPassageEditors,
++	pinPassageEditor,
+ 	removePassageEditors,
+ 	useDialogsContext
+ } from '../context';
+@@ -115,7 +116,11 @@ const InnerPassageEditStack: React.FC<PassageEditStackProps> = props => {
+ 							maximizable
+ 							onClose={event => handleClose(passageId, event)}
+ 						>
+-							<PassageEditContents passageId={passageId} storyId={storyId} />
++							<PassageEditContents
++								onPin={() => dispatch(pinPassageEditor(storyId, passageId))}
++								passageId={passageId}
++								storyId={storyId}
++							/>
+ 						</DialogCard>
+ 					);
+ 				})}
+diff --git a/src/dialogs/passage-edit/passage-toolbar.tsx b/src/dialogs/passage-edit/passage-toolbar.tsx
+index 37bc7b1..57701f7 100644
+--- a/src/dialogs/passage-edit/passage-toolbar.tsx
++++ b/src/dialogs/passage-edit/passage-toolbar.tsx
+@@ -1,9 +1,10 @@
+-import {IconResize} from '@tabler/icons';
++import {IconClipboardText, IconPin, IconResize} from '@tabler/icons';
+ import {Editor} from 'codemirror';
+ import * as React from 'react';
+ import {useTranslation} from 'react-i18next';
+ import {UndoRedoButtons} from '../../components/codemirror';
+ import {ButtonBar} from '../../components/container/button-bar';
++import {IconButton} from '../../components/control/icon-button';
+ import {MenuButton} from '../../components/control/menu-button';
+ import {RenamePassageButton} from '../../components/passage/rename-passage-button';
+ import {TestPassageButton} from '../../routes/story-edit/toolbar/passage/test-passage-button';
+@@ -17,20 +18,23 @@ import {
+ 	updatePassage
+ } from '../../store/stories';
+ import {useUndoableStoriesContext} from '../../store/undoable-stories';
++import {usePrefsContext} from '../../store/prefs';
+ import {Color} from '../../util/color';
+ import {TagCardButton} from '../../components/tag/tag-card-button';
+ 
+ export interface PassageToolbarProps {
+ 	disabled?: boolean;
+ 	editor?: Editor;
++	onPin?: () => void;
+ 	passage: Passage;
+ 	story: Story;
+ 	useCodeMirror: boolean;
+ }
+ 
+ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
+-	const {disabled, editor, passage, story, useCodeMirror} = props;
++	const {disabled, editor, onPin, passage, story, useCodeMirror} = props;
+ 	const {dispatch} = useUndoableStoriesContext();
++	const {prefs} = usePrefsContext();
+ 	const {t} = useTranslation();
+ 	const passageTags = storyPassageTags(story);
+ 
+@@ -55,6 +59,55 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
+ 		dispatch(updatePassage(story, passage, {name}, {dontUpdateOthers: true}));
+ 	}
+ 
++	function handleQuickPaste() {
++		if (!editor || !prefs.quickPasteText) {
++			return;
++		}
++
++		// Insert at the cursor (or replace the selection), leave the cursor after
++		// the inserted text, and hand focus back to the editor. We re-apply the
++		// selection after a tick because the controlled editor can otherwise reset
++		// it when it re-renders.
++
++		// The editor is controlled, so the inserted text only lands in the document
++		// after React re-renders. We work out where the cursor should end up from
++		// the text itself, then place it once the document has changed.
++
++		const text = prefs.quickPasteText;
++		const start = editor.getCursor('from');
++		const lengthBefore = editor.getValue().length;
++		const lines = text.split('\n');
++		const end =
++			lines.length === 1
++				? {line: start.line, ch: start.ch + text.length}
++				: {
++						line: start.line + lines.length - 1,
++						ch: lines[lines.length - 1].length
++					};
++
++		editor.replaceSelection(text, 'end');
++		editor.focus();
++
++		let attempts = 0;
++
++		function placeCursor() {
++			attempts++;
++
++			if (
++				editor &&
++				editor.getValue().length === lengthBefore &&
++				attempts < 40
++			) {
++				window.setTimeout(placeCursor, 15);
++				return;
++			}
++
++			editor?.setCursor(end);
++		}
++
++		window.setTimeout(placeCursor, 0);
++	}
++
+ 	function handleSetSize({height, width}: {height: number; width: number}) {
+ 		dispatch(updatePassage(story, passage, {height, width}));
+ 	}
+@@ -115,6 +168,26 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
+ 				story={story}
+ 			/>
+ 			<TestPassageButton passage={passage} story={story} />
++			{useCodeMirror && (
++				<IconButton
++					disabled={disabled || !editor || !prefs.quickPasteText}
++					icon={<IconClipboardText />}
++					label={
++						prefs.quickPasteText
++							? t('dialogs.passageEdit.quickPaste')
++							: t('dialogs.passageEdit.quickPasteEmpty')
++					}
++					onClick={handleQuickPaste}
++				/>
++			)}
++			{onPin && (
++				<IconButton
++					disabled={disabled}
++					icon={<IconPin />}
++					label={t('dialogs.passageEdit.pin')}
++					onClick={onPin}
++				/>
++			)}
+ 		</ButtonBar>
+ 	);
+ };
+diff --git a/src/dialogs/passage-pin/index.ts b/src/dialogs/passage-pin/index.ts
+new file mode 100644
+index 0000000..5e79476
+--- /dev/null
++++ b/src/dialogs/passage-pin/index.ts
+@@ -0,0 +1 @@
++export * from './passage-pin';
+diff --git a/src/dialogs/passage-pin/passage-pin.css b/src/dialogs/passage-pin/passage-pin.css
+new file mode 100644
+index 0000000..36dd8d3
+--- /dev/null
++++ b/src/dialogs/passage-pin/passage-pin.css
+@@ -0,0 +1,18 @@
++.passage-pin .dialog-card-header .tag-grid {
++	flex-shrink: 0;
++	height: 16px;
++	width: 16px;
++}
++
++.passage-pin .dialog-card-header .visible-whitespace {
++	flex-shrink: 1;
++	overflow: hidden;
++	text-overflow: ellipsis;
++}
++
++.passage-pin .dialog-card-header .visible-whitespace svg {
++	color: var(--gray);
++	height: 1em;
++	width: 1em;
++	transform: translateY(0.65em);
++}
+diff --git a/src/dialogs/passage-pin/passage-pin.tsx b/src/dialogs/passage-pin/passage-pin.tsx
+new file mode 100644
+index 0000000..2cdef9e
+--- /dev/null
++++ b/src/dialogs/passage-pin/passage-pin.tsx
+@@ -0,0 +1,67 @@
++import * as React from 'react';
++import {DialogCard} from '../../components/container/dialog-card';
++import {TagGrid} from '../../components/tag';
++import {VisibleWhitespace} from '../../components/visible-whitespace';
++import {
++	Passage,
++	passageWithId,
++	storyWithId,
++	useStoriesContext
++} from '../../store/stories';
++import {DialogComponentProps} from '../dialogs.types';
++import {PassageEditContents} from '../passage-edit/passage-edit-contents';
++import './passage-pin.css';
++
++export interface PassagePinProps extends DialogComponentProps {
++	passageId: string;
++	storyId: string;
++}
++
++/**
++ * A passage editor that stays put in its own column beside the main dialogs,
++ * so it can be used as a reference while writing other passages.
++ */
++export const PassagePin: React.FC<PassagePinProps> = props => {
++	// eslint-disable-next-line @typescript-eslint/no-unused-vars
++	const {onChangeProps, onClose, passageId, storyId, ...managementProps} =
++		props;
++	const {stories} = useStoriesContext();
++	let passage: Passage | undefined;
++	let tagColors = {};
++
++	try {
++		passage = passageWithId(stories, storyId, passageId);
++		tagColors = storyWithId(stories, storyId).tagColors;
++	} catch {
++		passage = undefined;
++	}
++
++	// If the passage has been deleted, close this pin.
++
++	React.useEffect(() => {
++		if (!passage) {
++			onClose();
++		}
++	}, [onClose, passage]);
++
++	if (!passage) {
++		return null;
++	}
++
++	return (
++		<DialogCard
++			{...managementProps}
++			className="passage-pin"
++			headerDisplayLabel={
++				<>
++					<TagGrid tags={passage.tags} tagColors={tagColors} />
++					<VisibleWhitespace value={passage.name} />
++				</>
++			}
++			headerLabel={passage.name}
++			onClose={() => onClose()}
++		>
++			<PassageEditContents passageId={passageId} storyId={storyId} />
++		</DialogCard>
++	);
++};
+diff --git a/src/routes/story-edit/story-edit-route.tsx b/src/routes/story-edit/story-edit-route.tsx
+index 4e66bf0..b52fab3 100644
+--- a/src/routes/story-edit/story-edit-route.tsx
++++ b/src/routes/story-edit/story-edit-route.tsx
+@@ -9,6 +9,7 @@ import {
+ 	UndoableStoriesContextProvider,
+ 	useUndoableStoriesContext
+ } from '../../store/undoable-stories';
++import {PassageTagMenu} from '../../components/passage/passage-tag-menu';
+ import {MarqueeablePassageMap} from './marqueeable-passage-map';
+ import {PassageFuzzyFinder} from './passage-fuzzy-finder';
+ import {StoryEditToolbar} from './toolbar';
+@@ -42,6 +43,7 @@ export const InnerStoryEditRoute: React.FC = () => {
+ 	return (
+ 		<div className="story-edit-route">
+ 			<DocumentTitle title={story.name} />
++			<PassageTagMenu story={story} />
+ 			<StoryEditToolbar
+ 				getCenter={getCenter}
+ 				onOpenFuzzyFinder={() => setFuzzyFinderOpen(true)}
+diff --git a/src/store/prefs/defaults.ts b/src/store/prefs/defaults.ts
+index 5417353..1035f04 100644
+--- a/src/store/prefs/defaults.ts
++++ b/src/store/prefs/defaults.ts
+@@ -19,6 +19,7 @@ export const defaults = (): PrefsState => ({
+ 	passageEditorFontFamily: 'var(--font-system)',
+ 	passageEditorFontScale: 1,
+ 	passageTagDisplay: 'color',
++	quickPasteText: '',
+ 	proofingFormat: {
+ 		name: 'Paperthin',
+ 		version: '1.0.0'
+diff --git a/src/store/prefs/prefs.types.ts b/src/store/prefs/prefs.types.ts
+index 668dbe0..a2596cc 100644
+--- a/src/store/prefs/prefs.types.ts
++++ b/src/store/prefs/prefs.types.ts
+@@ -80,6 +80,10 @@ export interface PrefsState {
+ 	 * cards in the story map.
+ 	 */
+ 	passageTagDisplay: 'color' | 'name';
++	/**
++	 * Text inserted at the cursor by the Quick Paste button in the passage editor.
++	 */
++	quickPasteText: string;
+ 	/**
+ 	 * Name and version of the selected proofing format.
+ 	 */
+diff --git a/src/test-util/fakes.ts b/src/test-util/fakes.ts
+index fed502d..ef27849 100644
+--- a/src/test-util/fakes.ts
++++ b/src/test-util/fakes.ts
+@@ -128,6 +128,7 @@ export function fakePrefs(overrides?: Partial<PrefsState>): PrefsState {
+ 		passageEditorFontFamily: faker.lorem.words(2),
+ 		passageEditorFontScale: 0.8 + faker.number.float(0.5),
+ 		passageTagDisplay: 'color',
++		quickPasteText: faker.lorem.words(3),
+ 		proofingFormat: {
+ 			name: faker.lorem.words(2),
+ 			version: faker.system.semver()
