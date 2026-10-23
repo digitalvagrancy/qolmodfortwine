@@ -1,7 +1,29 @@
+diff --git a/index.html b/index.html
+index 6799d50..a45f81b 100644
+--- a/index.html
++++ b/index.html
+@@ -4,7 +4,7 @@
+ 		<meta charset="utf-8" />
+ 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+ 		<meta name="theme-color" content="#000000" />
+-		<title>Twine</title>
++		<title>QoL Mod for Twine</title>
+ 		<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+ 	</head>
+ 	<body>
 diff --git a/public/locales/en-US.json b/public/locales/en-US.json
-index cf5b47f..c72c201 100644
+index cf5b47f..ce187b7 100644
 --- a/public/locales/en-US.json
 +++ b/public/locales/en-US.json
+@@ -10,7 +10,7 @@
+ 	},
+ 	"common": {
+ 		"add": "Add",
+-		"appName": "Twine",
++		"appName": "Twine (Modified)",
+ 		"back": "Back",
+ 		"build": "Build",
+ 		"cancel": "Cancel",
 @@ -57,6 +57,11 @@
  		"view": "View"
  	},
@@ -14,16 +36,29 @@ index cf5b47f..c72c201 100644
  		"addTagButton": {
  			"alreadyAdded": "This tag name has already been added.",
  			"addLabel": "Add Tag",
-@@ -169,6 +174,8 @@
+@@ -158,7 +163,10 @@
+ 			"codeRepo": "Visit Source Code Repository",
+ 			"license": "This application is released under the <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL v3 license</a>, but any work created with it may be released under any terms, including commercial ones.",
+ 			"localizationHeader": "Localizations",
+-			"title": "About Twine {{version}}",
++			"modNotice": "An unofficial, modified build of Twine {{version}}. It is not affiliated with or endorsed by the Interactive Fiction Technology Foundation or the Twine project, and it is provided as is, with no support. Please do not report problems with it to the Twine project. Twine is a registered trademark of the Interactive Fiction Technology Foundation.",
++			"title": "About",
++			"twineHeading": "About Twine {{version}}",
++			"modHeading": "{{modName}} v{{modVersion}}",
+ 			"twineDescription": "Twine is an open-source application for telling interactive, nonlinear stories."
+ 		},
+ 		"appDonation": {
+@@ -169,6 +177,9 @@
  			"title": "Support Twine Development"
  		},
  		"appPrefs": {
++			"passageTagOutlines": "Show tag colors as outlines (turn off for the original thin stripe)",
 +			"quickPasteText": "Quick Paste text",
 +			"quickPasteTextHelp": "Inserted at the text cursor when you click Quick Paste in a passage editor.",
  			"codeEditorFont": "Code Editor Font",
  			"codeEditorFontScale": "Code Editor Font Size",
  			"dialogWidth": "Dialog Width",
-@@ -197,6 +204,9 @@
+@@ -197,6 +208,9 @@
  		"passageEdit": {
  			"editorCrashed": "Something went wrong with this editor. Try closing it and editing this passage again.",
  			"passageTextEditorLabel": "Passage Text",
@@ -33,24 +68,58 @@ index cf5b47f..c72c201 100644
  			"passageTextPlaceholder": "Enter the body text of your passage here. To link to another passage, put two square brackets around its name, [[like this]].",
  			"setAsStart": "Start Story Here",
  			"size": "Size",
+@@ -303,7 +317,13 @@
+ 			"storyRename": "Something went wrong while renaming a story.",
+ 			"storySave": "Something went wrong while saving a story."
+ 		},
++		"about": {
++			"detail": "Modified build: {{modName}} v{{modVersion}}.\n\nUnofficial and unsupported. Not affiliated with or endorsed by the Interactive Fiction Technology Foundation or the Twine project. Twine is a registered trademark of the Interactive Fiction Technology Foundation.",
++			"message": "Twine {{version}}"
++		},
+ 		"menuBar": {
++			"about": "About",
++			"appMenu": "Twine (Modified)",
+ 			"checkForUpdates": "Check for Updates...",
+ 			"disableHardwareAcceleration": "Disable Hardware Acceleration",
+ 			"edit": "Edit",
+@@ -323,6 +343,9 @@
+ 		"storiesDirectoryName": "Stories",
+ 		"updateCheck": {
+ 			"download": "Download",
++			"modWarning": "Updating Twine will remove this mod.",
++			"modWarningContinue": "Check for Updates",
++			"modWarningDetail": "This is a modified build of Twine. If you install an official update, it will replace this build and the mod will be gone. Your stories and settings are not affected.",
+ 			"error": "Something went wrong while checking for an updated version of Twine.",
+ 			"updateAvailable": "A newer version of Twine is available.",
+ 			"upToDate": "This is the newest version of Twine available."
+@@ -407,7 +430,7 @@
+ 	},
+ 	"routeActions": {
+ 		"app": {
+-			"aboutApp": "About Twine",
++			"aboutApp": "About",
+ 			"preferences": "Preferences",
+ 			"reportBug": "Report a Bug",
+ 			"storyFormats": "Story Formats"
 diff --git a/src/components/passage/__tests__/passage-card.test.tsx b/src/components/passage/__tests__/passage-card.test.tsx
-index 5db92d4..7312b3b 100644
+index 5db92d4..00f4909 100644
 --- a/src/components/passage/__tests__/passage-card.test.tsx
 +++ b/src/components/passage/__tests__/passage-card.test.tsx
-@@ -8,7 +8,6 @@ import {passageIsEmpty} from '../../../util/passage-is-empty';
+@@ -4,6 +4,8 @@ import * as detectIt from 'detect-it';
+ import {axe} from 'jest-axe';
+ import * as React from 'react';
+ import {fakePassage} from '../../../test-util';
++import {PrefsContext} from '../../../store/prefs';
++import {defaults} from '../../../store/prefs/defaults';
+ import {passageIsEmpty} from '../../../util/passage-is-empty';
  import {PassageCard, PassageCardProps} from '../passage-card';
  
- jest.mock('../../tag/tag-badges');
--jest.mock('../../tag/tag-stripe');
- jest.mock('../../../util/passage-is-empty');
- 
- describe('<PassageCard>', () => {
-@@ -107,12 +106,26 @@ describe('<PassageCard>', () => {
+@@ -107,12 +109,70 @@ describe('<PassageCard>', () => {
  	});
  
  	describe("When the tagDisplay prop is 'color'", () => {
 -		it("displays a <TagStripe> of passage tags", () => {
-+		it('outlines the card with the colors of passage tags', () => {
++		it('outlines the card with the color of a passage tag', () => {
  			const passage = fakePassage({tags: ['mock-tag-1', 'mock-tag-2']});
  
 -			renderComponent({passage});
@@ -64,7 +133,51 @@ index 5db92d4..7312b3b 100644
 +			const card = document.querySelector('.passage-card') as HTMLElement;
 +
 +			expect(card).toHaveClass('tag-outlined');
-+			expect(card.style.boxShadow).toContain('var(--red)');
++			expect(card.style.getPropertyValue('--tag-outline')).toContain(
++				'var(--red)'
++			);
++		});
++
++		it('divides the outline evenly between multiple colored tags', () => {
++			const passage = fakePassage({tags: ['mock-tag-1', 'mock-tag-2']});
++
++			renderComponent({
++				passage,
++				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'blue'}
++			});
++
++			const outline = (
++				document.querySelector('.passage-card') as HTMLElement
++			).style.getPropertyValue('--tag-outline');
++
++			expect(outline).toContain('var(--red) 0.00deg 180.00deg');
++			expect(outline).toContain('var(--blue) 180.00deg 360.00deg');
++		});
++
++		it('shows a <TagStripe> instead of an outline when outlines are turned off', () => {
++			const passage = fakePassage({tags: ['mock-tag-1']});
++
++			render(
++				<PrefsContext.Provider
++					value={{
++						dispatch: jest.fn(),
++						prefs: {...defaults(), passageTagOutlines: false}
++					}}
++				>
++					<PassageCard
++						onDeselect={jest.fn()}
++						onEdit={jest.fn()}
++						onSelect={jest.fn()}
++						passage={passage}
++						tagColors={{'mock-tag-1': 'red'}}
++						tagDisplay="color"
++					/>
++				</PrefsContext.Provider>
++			);
++			expect(document.querySelector('.passage-card')).not.toHaveClass(
++				'tag-outlined'
++			);
++			expect(screen.getByTestId('mock-tag-stripe')).toBeInTheDocument();
 +		});
 +
 +		it("doesn't outline a card with no colored tags", () => {
@@ -76,58 +189,126 @@ index 5db92d4..7312b3b 100644
  			);
  		});
  
+@@ -125,7 +185,7 @@ describe('<PassageCard>', () => {
+ 	});
+ 
+ 	describe("When the tagDisplay prop is 'name'", () => {
+-		it("displays <TagBadges> containing passage tags", () => {
++		it('displays <TagBadges> containing passage tags', () => {
+ 			const passage = fakePassage({tags: ['mock-tag-1', 'mock-tag-2']});
+ 
+ 			renderComponent({passage, tagDisplay: 'name'});
+diff --git a/src/components/passage/__tests__/tag-outline.test.ts b/src/components/passage/__tests__/tag-outline.test.ts
+new file mode 100644
+index 0000000..84b4ece
+--- /dev/null
++++ b/src/components/passage/__tests__/tag-outline.test.ts
+@@ -0,0 +1,28 @@
++import {tagOutlineGradient} from '../tag-outline';
++
++describe('tagOutlineGradient()', () => {
++	it('returns a solid color for one color', () => {
++		expect(tagOutlineGradient(['red'], 100, 100)).toBe(
++			'conic-gradient(var(--red), var(--red))'
++		);
++	});
++
++	it('splits two colors into exact halves', () => {
++		const result = tagOutlineGradient(['red', 'blue'], 200, 100);
++
++		expect(result).toContain('var(--red) 0.00deg 180.00deg');
++		expect(result).toContain('var(--blue) 180.00deg 360.00deg');
++	});
++
++	it('splits three colors by edge length, not by angle', () => {
++		// On a square, the thirds are 144px of the 432px perimeter, which places the
++		// first boundary partway up the left edge (about 123.7 degrees around from
++		// the bottom center).
++
++		const result = tagOutlineGradient(['red', 'green', 'blue'], 100, 100);
++
++		expect(result).toContain('var(--red) 0.00deg 123.69deg');
++		expect(result).toContain('var(--green) 123.69deg 236.31deg');
++		expect(result).toContain('var(--blue) 236.31deg 360.00deg');
++	});
++});
 diff --git a/src/components/passage/passage-card.css b/src/components/passage/passage-card.css
-index d8561f2..d393f3e 100644
+index d8561f2..5200768 100644
 --- a/src/components/passage/passage-card.css
 +++ b/src/components/passage/passage-card.css
-@@ -95,3 +95,7 @@
+@@ -95,3 +95,20 @@
  [data-app-theme='dark'] .passage-card.empty.selected .card {
  	background: hsla(212, 90%, 60%, 0.2);
  }
 +
++/* Tag outline: a gradient layer sitting behind the card and peeking out around
++   its edges. The gradient is set per card in --tag-outline. */
++
 +.passage-card.tag-outlined {
-+	border-radius: var(--corner-round);
++	isolation: isolate;
++}
++
++.passage-card.tag-outlined::before {
++	background: var(--tag-outline);
++	border-radius: calc(var(--corner-round) + 4px);
++	content: '';
++	inset: -4px;
++	pointer-events: none;
++	position: absolute;
++	z-index: -1;
 +}
 diff --git a/src/components/passage/passage-card.tsx b/src/components/passage/passage-card.tsx
-index e976d36..e28eceb 100644
+index e976d36..71e6504 100644
 --- a/src/components/passage/passage-card.tsx
 +++ b/src/components/passage/passage-card.tsx
-@@ -6,10 +6,9 @@ import {useTranslation} from 'react-i18next';
+@@ -5,11 +5,13 @@ import {DraggableCore, DraggableCoreProps} from 'react-draggable';
+ import {useTranslation} from 'react-i18next';
  import {CardContent} from '../container/card';
  import {SelectableCard} from '../container/card/selectable-card';
++import {usePrefsContext} from '../../store/prefs';
  import {Passage, TagColors} from '../../store/stories';
 -import {TagStripe} from '../tag/tag-stripe';
  import {passageIsEmpty} from '../../util/passage-is-empty';
++import {tagOutlineGradient} from './tag-outline';
  import './passage-card.css';
 -import { TagBadges } from '../tag/tag-badges';
 +import {TagBadges} from '../tag/tag-badges';
++import {TagStripe} from '../tag/tag-stripe';
  
  export interface PassageCardProps {
  	onEdit: (passage: Passage) => void;
-@@ -39,14 +38,35 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -39,14 +41,43 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  		tagDisplay
  	} = props;
  	const {t} = useTranslation();
-+	// In color mode, each colored tag draws a ring around the card, innermost
-+	// ring first. Uncolored tags are ignored.
++	// In color mode (with outlines on), the card gets an outline divided evenly
++	// between its colored tags: one color is a plain outline, two colors split it
++	// in half, three in thirds, and so on. Uncolored tags are ignored. With
++	// outlines off we fall back to the original thin stripe.
 +
-+	const outlineShadow = React.useMemo(() => {
-+		if (tagDisplay !== 'color') {
++	const {prefs} = usePrefsContext();
++	const outline = React.useMemo(() => {
++		if (tagDisplay !== 'color' || !prefs.passageTagOutlines) {
 +			return undefined;
 +		}
 +
-+		const ringColors = passage.tags
++		const colors = passage.tags
 +			.filter(tag => tagColors[tag] && tagColors[tag] !== 'none')
 +			.map(tag => tagColors[tag]);
 +
-+		if (ringColors.length === 0) {
++		if (colors.length === 0) {
 +			return undefined;
 +		}
 +
-+		return ringColors
-+			.map((color, index) => `0 0 0 ${(index + 1) * 3}px var(--${color})`)
-+			.join(', ');
-+	}, [passage.tags, tagColors, tagDisplay]);
++		return tagOutlineGradient(colors, passage.width, passage.height);
++	}, [
++		passage.height,
++		passage.tags,
++		passage.width,
++		prefs.passageTagOutlines,
++		tagColors,
++		tagDisplay
++	]);
  	const className = React.useMemo(
  		() =>
  			classNames('passage-card', {
@@ -135,29 +316,37 @@ index e976d36..e28eceb 100644
  				selected: passage.selected,
 -				[`tag-display-${tagDisplay}`]: true
 +				[`tag-display-${tagDisplay}`]: true,
-+				'tag-outlined': !!outlineShadow
++				'tag-outlined': !!outline
  			}),
 -		[passage, tagDisplay]
-+		[outlineShadow, passage, tagDisplay]
++		[outline, passage, tagDisplay]
  	);
  	const container = React.useRef<HTMLDivElement>(null);
  	const excerpt = React.useMemo(() => {
-@@ -66,12 +86,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -65,13 +96,15 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 		);
  	}, [passage.text, t]);
  	const style = React.useMemo(
- 		() => ({
-+			boxShadow: outlineShadow,
- 			height: passage.height,
- 			left: passage.left,
- 			top: passage.top,
- 			width: passage.width
- 		}),
+-		() => ({
+-			height: passage.height,
+-			left: passage.left,
+-			top: passage.top,
+-			width: passage.width
+-		}),
 -		[passage.height, passage.left, passage.top, passage.width]
-+		[outlineShadow, passage.height, passage.left, passage.top, passage.width]
++		(): React.CSSProperties =>
++			({
++				'--tag-outline': outline,
++				height: passage.height,
++				left: passage.left,
++				top: passage.top,
++				width: passage.width
++			}) as React.CSSProperties,
++		[outline, passage.height, passage.left, passage.top, passage.width]
  	);
  	const handleMouseDown = React.useCallback(
  		(event: MouseEvent) => {
-@@ -111,7 +132,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -111,7 +144,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  			onDrag={onDrag}
  			onStop={onDragStop}
  		>
@@ -172,11 +361,14 @@ index e976d36..e28eceb 100644
  				<SelectableCard
  					highlighted={passage.highlighted}
  					label={passage.name}
-@@ -119,10 +146,11 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -119,10 +158,14 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  					onSelect={handleSelect}
  					selected={passage.selected}
  				>
 -					{tagDisplay === 'color' && <TagStripe tagColors={tagColors} tags={passage.tags} />}
++					{tagDisplay === 'color' && !prefs.passageTagOutlines && (
++						<TagStripe tagColors={tagColors} tags={passage.tags} />
++					)}
  					<h2>{passage.name}</h2>
  					<CardContent>{excerpt}</CardContent>
 -					{tagDisplay === 'name' && <TagBadges tagColors={tagColors} tags={passage.tags} />}
@@ -512,6 +704,153 @@ index 0000000..4c1c4aa
 +		</div>
 +	);
 +};
+diff --git a/src/components/passage/tag-outline.ts b/src/components/passage/tag-outline.ts
+new file mode 100644
+index 0000000..15b2182
+--- /dev/null
++++ b/src/components/passage/tag-outline.ts
+@@ -0,0 +1,84 @@
++/**
++ * How far the outline peeks out past the edge of a passage card, in pixels.
++ * Keep this in sync with `inset` in passage-card.css.
++ */
++export const tagOutlineWidth = 4;
++
++/**
++ * Returns a CSS `conic-gradient()` that paints a rectangle's outline divided
++ * evenly, by length along the edge, between the colors given: halves for two
++ * colors, thirds for three, and so on. The first color starts at the bottom
++ * center and the rest follow clockwise (so two colors are left and right).
++ */
++export function tagOutlineGradient(
++	colors: string[],
++	cardWidth: number,
++	cardHeight: number
++) {
++	if (colors.length === 1) {
++		return `conic-gradient(var(--${colors[0]}), var(--${colors[0]}))`;
++	}
++
++	const w = cardWidth + tagOutlineWidth * 2;
++	const h = cardHeight + tagOutlineWidth * 2;
++	const perimeter = 2 * (w + h);
++
++	// Position on the rectangle's edge, relative to its center, a given distance
++	// clockwise from the bottom center. Y increases downward.
++
++	function pointAt(distance: number) {
++		let d = distance;
++
++		if (d <= w / 2) {
++			return {x: -d, y: h / 2};
++		}
++
++		d -= w / 2;
++
++		if (d <= h) {
++			return {x: -w / 2, y: h / 2 - d};
++		}
++
++		d -= h;
++
++		if (d <= w) {
++			return {x: -w / 2 + d, y: -h / 2};
++		}
++
++		d -= w;
++
++		if (d <= h) {
++			return {x: w / 2, y: -h / 2 + d};
++		}
++
++		d -= h;
++		return {x: w / 2 - d, y: h / 2};
++	}
++
++	// The gradient starts at 180deg (bottom center) and runs clockwise, so we
++	// express each boundary as an angle relative to that.
++
++	function angleAt(fraction: number) {
++		if (fraction <= 0) {
++			return 0;
++		}
++
++		if (fraction >= 1) {
++			return 360;
++		}
++
++		const {x, y} = pointAt(fraction * perimeter);
++		const fromTop = (Math.atan2(x, -y) * 180) / Math.PI;
++
++		return (((fromTop - 180) % 360) + 360) % 360;
++	}
++
++	const stops = colors.map((color, index) => {
++		const start = angleAt(index / colors.length).toFixed(2);
++		const end = angleAt((index + 1) / colors.length).toFixed(2);
++
++		return `var(--${color}) ${start}deg ${end}deg`;
++	});
++
++	return `conic-gradient(from 180deg, ${stops.join(', ')})`;
++}
+diff --git a/src/dialogs/about-twine/about-twine.css b/src/dialogs/about-twine/about-twine.css
+index c03455f..f81bd7f 100644
+--- a/src/dialogs/about-twine/about-twine.css
++++ b/src/dialogs/about-twine/about-twine.css
+@@ -23,3 +23,9 @@
+ 	margin-left: 0;
+ 	padding-left: 0;
+ }
++
++.about-twine-dialog .about-section-heading {
++	font-size: 1.1em;
++	margin: var(--grid-size);
++	margin-top: calc(2 * var(--grid-size));
++}
+diff --git a/src/dialogs/about-twine/about-twine.tsx b/src/dialogs/about-twine/about-twine.tsx
+index 6840b0f..343d344 100644
+--- a/src/dialogs/about-twine/about-twine.tsx
++++ b/src/dialogs/about-twine/about-twine.tsx
+@@ -5,6 +5,7 @@ import {ButtonBar} from '../../components/container/button-bar';
+ import {DialogCard} from '../../components/container/dialog-card';
+ import {IconLink} from '../../components/control/icon-link';
+ import {getAppInfo} from '../../util/app-info';
++import {qolMod} from '../../util/qol-mod';
+ import {DialogComponentProps} from '../dialogs.types';
+ import credits from './credits.json';
+ import './about-twine.css';
+@@ -19,10 +20,29 @@ export const AboutTwineDialog: React.FC<DialogComponentProps> = props => {
+ 			className="about-twine-dialog"
+ 			fixedSize
+ 			headerLabel={t('dialogs.aboutTwine.title', {
+-				version: info.version
++				modName: qolMod.name,
++				modVersion: qolMod.version
+ 			})}
+ 		>
+ 			<div className="content">
++				<h2 className="about-section-heading">
++					{t('dialogs.aboutTwine.modHeading', {
++						modName: qolMod.name,
++						modVersion: qolMod.version
++					})}
++				</h2>
++				<p
++					dangerouslySetInnerHTML={{
++						__html: t('dialogs.aboutTwine.modNotice', {
++							modName: qolMod.name,
++							modVersion: qolMod.version,
++							version: info.version
++						})
++					}}
++				/>
++				<h2 className="about-section-heading">
++					{t('dialogs.aboutTwine.twineHeading', {version: info.version})}
++				</h2>
+ 				<p>{t('dialogs.aboutTwine.twineDescription')}</p>
+ 				<p
+ 					dangerouslySetInnerHTML={{
 diff --git a/src/dialogs/app-prefs.css b/src/dialogs/app-prefs.css
 index c283632..8bb404b 100644
 --- a/src/dialogs/app-prefs.css
@@ -544,10 +883,10 @@ index c283632..8bb404b 100644
 +	opacity: 0.75;
 +}
 diff --git a/src/dialogs/app-prefs.tsx b/src/dialogs/app-prefs.tsx
-index a4576f6..5138d11 100644
+index a4576f6..495aa0e 100644
 --- a/src/dialogs/app-prefs.tsx
 +++ b/src/dialogs/app-prefs.tsx
-@@ -70,11 +70,32 @@ export const AppPrefsDialog: React.FC<
+@@ -70,11 +70,38 @@ export const AppPrefsDialog: React.FC<
  				<TextSelect
  					onChange={e => dispatch(setPref('passageTagDisplay', e.target.value))}
  					options={[
@@ -567,6 +906,12 @@ index a4576f6..5138d11 100644
 +				>
 +					{t('dialogs.appPrefs.passageTagDisplay')}
 +				</TextSelect>
++				<CheckboxButton
++					disabled={prefs.passageTagDisplay !== 'color'}
++					label={t('dialogs.appPrefs.passageTagOutlines')}
++					onChange={value => dispatch(setPref('passageTagOutlines', value))}
++					value={prefs.passageTagOutlines}
++				/>
 +				<div className="quick-paste-pref">
 +					<label htmlFor="quick-paste-text">
 +						{t('dialogs.appPrefs.quickPasteText')}
@@ -1075,19 +1420,306 @@ index 0000000..2cdef9e
 +		</DialogCard>
 +	);
 +};
+diff --git a/src/electron/main-process/__tests__/about-dialog.test.ts b/src/electron/main-process/__tests__/about-dialog.test.ts
+new file mode 100644
+index 0000000..c89c615
+--- /dev/null
++++ b/src/electron/main-process/__tests__/about-dialog.test.ts
+@@ -0,0 +1,21 @@
++import {dialog} from 'electron';
++import {version as twineVersion} from '../../../../package.json';
++import {qolMod} from '../../../util/qol-mod';
++import {showAboutDialog} from '../about-dialog';
++
++jest.mock('electron');
++
++describe('showAboutDialog()', () => {
++	it('shows the Twine version, then details about the modified build', async () => {
++		await showAboutDialog();
++		expect(dialog.showMessageBox).toHaveBeenCalledWith(
++			expect.objectContaining({
++				detail: 'electron.about.detail',
++				message: 'electron.about.message',
++				type: 'info'
++			})
++		);
++		expect(qolMod.name).toBeTruthy();
++		expect(twineVersion).toBeTruthy();
++	});
++});
+diff --git a/src/electron/main-process/__tests__/check-for-update.test.ts b/src/electron/main-process/__tests__/check-for-update.test.ts
+index 2b897d7..25cdea1 100644
+--- a/src/electron/main-process/__tests__/check-for-update.test.ts
++++ b/src/electron/main-process/__tests__/check-for-update.test.ts
+@@ -12,8 +12,40 @@ describe('checkForUpdate()', () => {
+ 	const showErrorBoxMock = dialog.showErrorBox as jest.Mock;
+ 	const showMessageBoxMock = dialog.showMessageBox as jest.Mock;
+ 
++	const warningCall = [
++		expect.objectContaining({message: 'electron.updateCheck.modWarning'})
++	];
++
+ 	beforeEach(() => {
+ 		jest.spyOn(console, 'log').mockReturnValue();
++
++		// The first dialog is always the "this will remove the mod" warning.
++
++		showMessageBoxMock.mockResolvedValueOnce({response: 0});
++	});
++
++	it('warns that updating will remove the mod before checking', async () => {
++		nodeFetchMock.mockReturnValue({
++			json: () => ({url: 'mock-url', version: '0.0.0'})
++		});
++		await checkForUpdate();
++		expect(showMessageBoxMock.mock.calls[0]).toEqual([
++			expect.objectContaining({
++				buttons: ['electron.updateCheck.modWarningContinue', 'common.cancel'],
++				defaultId: 1,
++				detail: 'electron.updateCheck.modWarningDetail',
++				message: 'electron.updateCheck.modWarning',
++				type: 'warning'
++			})
++		]);
++	});
++
++	it("doesn't check for updates if the user cancels the warning", async () => {
++		showMessageBoxMock.mockReset();
++		showMessageBoxMock.mockResolvedValueOnce({response: 1});
++		await checkForUpdate();
++		expect(nodeFetchMock).not.toHaveBeenCalled();
++		expect(showMessageBoxMock).toHaveBeenCalledTimes(1);
+ 	});
+ 
+ 	describe('if the newest version is older than the current one', () => {
+@@ -26,6 +58,7 @@ describe('checkForUpdate()', () => {
+ 		it('shows a dialog saying that the user has the most current version', async () => {
+ 			await checkForUpdate();
+ 			expect(showMessageBoxMock.mock.calls).toEqual([
++				warningCall,
+ 				[expect.objectContaining({message: 'electron.updateCheck.upToDate'})]
+ 			]);
+ 		});
+@@ -41,6 +74,7 @@ describe('checkForUpdate()', () => {
+ 		it('shows a dialog saying that the user has the most current version', async () => {
+ 			await checkForUpdate();
+ 			expect(showMessageBoxMock.mock.calls).toEqual([
++				warningCall,
+ 				[expect.objectContaining({message: 'electron.updateCheck.upToDate'})]
+ 			]);
+ 		});
+@@ -56,6 +90,7 @@ describe('checkForUpdate()', () => {
+ 		it('shows a dialog saying a newer version is available', async () => {
+ 			await checkForUpdate();
+ 			expect(showMessageBoxMock.mock.calls).toEqual([
++				warningCall,
+ 				[
+ 					expect.objectContaining({
+ 						buttons: ['electron.updateCheck.download', 'common.cancel'],
+diff --git a/src/electron/main-process/__tests__/menu-bar.test.ts b/src/electron/main-process/__tests__/menu-bar.test.ts
+index 704dafc..948e355 100644
+--- a/src/electron/main-process/__tests__/menu-bar.test.ts
++++ b/src/electron/main-process/__tests__/menu-bar.test.ts
+@@ -62,8 +62,12 @@ describe('initMenuBar', () => {
+ 		it('creates an application menu with standard menu items', () => {
+ 			const menu1 = setApplicationMenuSpy.mock.calls[0][0][0];
+ 
+-			expect(menu1.label).toBe('mock-electron-app-name');
+-			expect(hasItemWithRole(menu1, 'about')).toBe(true);
++			expect(menu1.label).toBe('electron.menuBar.appMenu');
++			expect(
++				(menu1.submenu as MenuItemConstructorOptions[]).some(
++					item => item.label === 'electron.menuBar.about'
++				)
++			).toBe(true);
+ 			expect(hasItemWithRole(menu1, 'services')).toBe(true);
+ 			expect(hasItemWithRole(menu1, 'hide')).toBe(true);
+ 			expect(hasItemWithRole(menu1, 'hideOthers')).toBe(true);
+@@ -235,7 +239,7 @@ describe('initMenuBar', () => {
+ 		it('creates an application menu with a quit menu item', () => {
+ 			const menu1 = setApplicationMenuSpy.mock.calls[0][0][0];
+ 
+-			expect(menu1.label).toBe('mock-electron-app-name');
++			expect(menu1.label).toBe('electron.menuBar.appMenu');
+ 			expect(hasItemWithRole(menu1, 'quit')).toBe(true);
+ 		});
+ 
+diff --git a/src/electron/main-process/about-dialog.ts b/src/electron/main-process/about-dialog.ts
+new file mode 100644
+index 0000000..b0cda51
+--- /dev/null
++++ b/src/electron/main-process/about-dialog.ts
+@@ -0,0 +1,21 @@
++import {dialog} from 'electron';
++import {version as twineVersion} from '../../../package.json';
++import {qolMod} from '../../util/qol-mod';
++import {i18n} from './locales';
++
++/**
++ * Shows the native About dialog: Twine's own version first, then a few details
++ * about this modified build.
++ */
++export function showAboutDialog() {
++	return dialog.showMessageBox({
++		buttons: [i18n.t('common.ok')],
++		detail: i18n.t('electron.about.detail', {
++			modName: qolMod.name,
++			modVersion: qolMod.version
++		}),
++		message: i18n.t('electron.about.message', {version: twineVersion}),
++		title: i18n.t('electron.menuBar.about'),
++		type: 'info'
++	});
++}
+diff --git a/src/electron/main-process/check-for-update.ts b/src/electron/main-process/check-for-update.ts
+index eaef0e8..dfc4e20 100644
+--- a/src/electron/main-process/check-for-update.ts
++++ b/src/electron/main-process/check-for-update.ts
+@@ -22,6 +22,25 @@ interface VersionResponse {
+ }
+ 
+ export async function checkForUpdate() {
++	// This is a modified build, so installing an official update would replace
++	// it. Make sure the user knows before going any further.
++
++	const {response: proceed} = await dialog.showMessageBox({
++		buttons: [
++			i18n.t('electron.updateCheck.modWarningContinue'),
++			i18n.t('common.cancel')
++		],
++		cancelId: 1,
++		defaultId: 1,
++		detail: i18n.t('electron.updateCheck.modWarningDetail'),
++		message: i18n.t('electron.updateCheck.modWarning'),
++		type: 'warning'
++	});
++
++	if (proceed !== 0) {
++		return;
++	}
++
+ 	console.log(`Checking for application update at ${checkUrl}`);
+ 
+ 	try {
+diff --git a/src/electron/main-process/menu-bar.ts b/src/electron/main-process/menu-bar.ts
+index ec29a07..dd84397 100644
+--- a/src/electron/main-process/menu-bar.ts
++++ b/src/electron/main-process/menu-bar.ts
+@@ -1,15 +1,10 @@
+-import {
+-	app,
+-	BrowserWindow,
+-	Menu,
+-	shell,
+-	MenuItemConstructorOptions
+-} from 'electron';
++import {BrowserWindow, Menu, shell, MenuItemConstructorOptions} from 'electron';
+ import {
+ 	chooseStoryDirectoryPath,
+ 	revealStoryDirectory
+ } from './story-directory';
+ import {i18n} from './locales';
++import {showAboutDialog} from './about-dialog';
+ import {checkForUpdate} from './check-for-update';
+ import {toggleHardwareAcceleration} from './hardware-acceleration';
+ import {getAppPref} from './app-prefs';
+@@ -17,9 +12,9 @@ import {getAppPref} from './app-prefs';
+ export function initMenuBar() {
+ 	const template: MenuItemConstructorOptions[] = [
+ 		{
+-			label: app.getName(),
++			label: i18n.t('electron.menuBar.appMenu'),
+ 			submenu: [
+-				{role: 'about'},
++				{label: i18n.t('electron.menuBar.about'), click: showAboutDialog},
+ 				{
+ 					label: i18n.t('electron.menuBar.checkForUpdates'),
+ 					click: checkForUpdate
+@@ -93,7 +88,7 @@ export function initMenuBar() {
+ 
+ 	if (process.platform === 'darwin') {
+ 		template[0].submenu = [
+-			{role: 'about'},
++			{label: i18n.t('electron.menuBar.about'), click: showAboutDialog},
+ 			{
+ 				label: i18n.t('electron.menuBar.checkForUpdates'),
+ 				click: checkForUpdate
+diff --git a/src/route-actions/__tests__/app-actions.test.tsx b/src/route-actions/__tests__/app-actions.test.tsx
+index cff17e1..722cbbe 100644
+--- a/src/route-actions/__tests__/app-actions.test.tsx
++++ b/src/route-actions/__tests__/app-actions.test.tsx
+@@ -47,17 +47,11 @@ describe('<AppActions>', () => {
+ 		expect(screen.getByText('dialogs.storyFormats.title')).toBeInTheDocument();
+ 	});
+ 
+-	it('displays a button that allows users to report bugs', () => {
+-		const openSpy = jest
+-			.spyOn(window, 'open')
+-			.mockReturnValue(undefined as any);
+-
++	it("doesn't display a button to report bugs to the Twine project", () => {
+ 		renderComponent();
+-		expect(openSpy).not.toHaveBeenCalled();
+-		fireEvent.click(screen.getByText('routeActions.app.reportBug'));
+-		expect(openSpy.mock.calls).toEqual([
+-			['https://twinery.org/2bugs', '_blank']
+-		]);
++		expect(
++			screen.queryByText('routeActions.app.reportBug')
++		).not.toBeInTheDocument();
+ 	});
+ 
+ 	it('is accessible', async () => {
+diff --git a/src/route-actions/app-actions.tsx b/src/route-actions/app-actions.tsx
+index 4ca2585..4ce6830 100644
+--- a/src/route-actions/app-actions.tsx
++++ b/src/route-actions/app-actions.tsx
+@@ -1,4 +1,4 @@
+-import {IconAward, IconBug, IconFileCode, IconSettings} from '@tabler/icons';
++import {IconAward, IconFileCode, IconSettings} from '@tabler/icons';
+ import * as React from 'react';
+ import {useTranslation} from 'react-i18next';
+ import {useHistory} from 'react-router-dom';
+@@ -34,11 +34,6 @@ export const AppActions: React.FC = () => {
+ 					dispatch({type: 'addDialog', component: AboutTwineDialog})
+ 				}
+ 			/>
+-			<IconButton
+-				icon={<IconBug />}
+-				label={t('routeActions.app.reportBug')}
+-				onClick={() => window.open('https://twinery.org/2bugs', '_blank')}
+-			/>
+ 		</ButtonBar>
+ 	);
+ };
 diff --git a/src/routes/story-edit/story-edit-route.tsx b/src/routes/story-edit/story-edit-route.tsx
-index 4e66bf0..b52fab3 100644
+index 4e66bf0..4e01665 100644
 --- a/src/routes/story-edit/story-edit-route.tsx
 +++ b/src/routes/story-edit/story-edit-route.tsx
-@@ -9,6 +9,7 @@ import {
+@@ -3,12 +3,14 @@ import {useParams} from 'react-router-dom';
+ import {MainContent} from '../../components/container/main-content';
+ import {DocumentTitle} from '../../components/document-title/document-title';
+ import {DialogsContextProvider} from '../../dialogs';
+-import { usePrefsContext } from '../../store/prefs';
++import {usePrefsContext} from '../../store/prefs';
+ import {storyWithId} from '../../store/stories';
+ import {
  	UndoableStoriesContextProvider,
  	useUndoableStoriesContext
  } from '../../store/undoable-stories';
++import {useDoubleClickCreate} from './use-double-click-create';
 +import {PassageTagMenu} from '../../components/passage/passage-tag-menu';
  import {MarqueeablePassageMap} from './marqueeable-passage-map';
  import {PassageFuzzyFinder} from './passage-fuzzy-finder';
  import {StoryEditToolbar} from './toolbar';
-@@ -42,6 +43,7 @@ export const InnerStoryEditRoute: React.FC = () => {
+@@ -36,12 +38,14 @@ export const InnerStoryEditRoute: React.FC = () => {
+ 	} = usePassageChangeHandlers(story);
+ 	const visibleZoom = useZoomTransition(story.zoom, mainContent.current);
+ 
++	useDoubleClickCreate(story, mainContent, handleEditPassage);
+ 	useZoomShortcuts(story);
+ 	useInitialPassageCreation(story, getCenter);
+ 
  	return (
  		<div className="story-edit-route">
  			<DocumentTitle title={story.name} />
@@ -1095,26 +1727,110 @@ index 4e66bf0..b52fab3 100644
  			<StoryEditToolbar
  				getCenter={getCenter}
  				onOpenFuzzyFinder={() => setFuzzyFinderOpen(true)}
+diff --git a/src/routes/story-edit/use-double-click-create.ts b/src/routes/story-edit/use-double-click-create.ts
+new file mode 100644
+index 0000000..8a68349
+--- /dev/null
++++ b/src/routes/story-edit/use-double-click-create.ts
+@@ -0,0 +1,72 @@
++import * as React from 'react';
++import {Passage, Story, createUntitledPassage} from '../../store/stories';
++import {useUndoableStoriesContext} from '../../store/undoable-stories';
++
++/**
++ * Lets the user double-click empty space in the story map to create a passage
++ * there and open it for editing.
++ */
++export function useDoubleClickCreate(
++	story: Story,
++	container: React.RefObject<HTMLElement>,
++	onEdit: (passage: Passage) => void
++) {
++	const {dispatch} = useUndoableStoriesContext();
++	const storyRef = React.useRef(story);
++	const pendingName = React.useRef<string | undefined>();
++
++	storyRef.current = story;
++
++	React.useEffect(() => {
++		const element = container.current;
++
++		if (!element) {
++			return;
++		}
++
++		function handleDoubleClick(event: MouseEvent) {
++			const target = event.target as HTMLElement | null;
++
++			// Only react to the empty map background, not cards, buttons or dialogs.
++
++			if (
++				!element ||
++				!target ||
++				target.closest('.passage-card, button, a, input, textarea')
++			) {
++				return;
++			}
++
++			const current = storyRef.current;
++			const rect = element.getBoundingClientRect();
++			const action = createUntitledPassage(
++				current,
++				(event.clientX - rect.left + element.scrollLeft) / current.zoom,
++				(event.clientY - rect.top + element.scrollTop) / current.zoom
++			);
++
++			pendingName.current = action.props.name;
++			dispatch(action, 'undoChange.newPassage');
++		}
++
++		element.addEventListener('dblclick', handleDoubleClick);
++		return () => element.removeEventListener('dblclick', handleDoubleClick);
++	}, [container, dispatch]);
++
++	// Once the new passage exists in the story, open it for editing.
++
++	React.useEffect(() => {
++		if (!pendingName.current) {
++			return;
++		}
++
++		const created = story.passages.find(
++			passage => passage.name === pendingName.current
++		);
++
++		if (created) {
++			pendingName.current = undefined;
++			onEdit(created);
++		}
++	}, [onEdit, story.passages]);
++}
 diff --git a/src/store/prefs/defaults.ts b/src/store/prefs/defaults.ts
-index 5417353..1035f04 100644
+index 5417353..6ecfe9b 100644
 --- a/src/store/prefs/defaults.ts
 +++ b/src/store/prefs/defaults.ts
-@@ -19,6 +19,7 @@ export const defaults = (): PrefsState => ({
+@@ -19,6 +19,8 @@ export const defaults = (): PrefsState => ({
  	passageEditorFontFamily: 'var(--font-system)',
  	passageEditorFontScale: 1,
  	passageTagDisplay: 'color',
++	passageTagOutlines: true,
 +	quickPasteText: '',
  	proofingFormat: {
  		name: 'Paperthin',
  		version: '1.0.0'
 diff --git a/src/store/prefs/prefs.types.ts b/src/store/prefs/prefs.types.ts
-index 668dbe0..a2596cc 100644
+index 668dbe0..aaf3117 100644
 --- a/src/store/prefs/prefs.types.ts
 +++ b/src/store/prefs/prefs.types.ts
-@@ -80,6 +80,10 @@ export interface PrefsState {
+@@ -80,6 +80,15 @@ export interface PrefsState {
  	 * cards in the story map.
  	 */
  	passageTagDisplay: 'color' | 'name';
++	/**
++	 * Draw tag colors as an outline around passage cards (true) or as the
++	 * original thin stripe (false). Only applies when tags are shown as colors.
++	 */
++	passageTagOutlines: boolean;
 +	/**
 +	 * Text inserted at the cursor by the Quick Paste button in the passage editor.
 +	 */
@@ -1123,14 +1839,29 @@ index 668dbe0..a2596cc 100644
  	 * Name and version of the selected proofing format.
  	 */
 diff --git a/src/test-util/fakes.ts b/src/test-util/fakes.ts
-index fed502d..ef27849 100644
+index fed502d..88a3abd 100644
 --- a/src/test-util/fakes.ts
 +++ b/src/test-util/fakes.ts
-@@ -128,6 +128,7 @@ export function fakePrefs(overrides?: Partial<PrefsState>): PrefsState {
+@@ -128,6 +128,8 @@ export function fakePrefs(overrides?: Partial<PrefsState>): PrefsState {
  		passageEditorFontFamily: faker.lorem.words(2),
  		passageEditorFontScale: 0.8 + faker.number.float(0.5),
  		passageTagDisplay: 'color',
++		passageTagOutlines: true,
 +		quickPasteText: faker.lorem.words(3),
  		proofingFormat: {
  			name: faker.lorem.words(2),
  			version: faker.system.semver()
+diff --git a/src/util/qol-mod.ts b/src/util/qol-mod.ts
+new file mode 100644
+index 0000000..9e6d265
+--- /dev/null
++++ b/src/util/qol-mod.ts
+@@ -0,0 +1,8 @@
++/**
++ * Identity of this modified build. Change these two values to rename or
++ * re-version the mod; the About dialog reads them.
++ */
++export const qolMod = {
++	name: 'QoL Mod for Twine',
++	version: '1.2.0'
++};
