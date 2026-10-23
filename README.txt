@@ -35,7 +35,7 @@ INSTALL
    "resources" folder.
 3. Rename "app.asar" to "app.asar.original".
 4. Copy the new "app.asar" from this zip into that same folder.
-5. Start Twine and check Twine > About Twine says 2.12.1.
+5. Relaunch.
 
 UNINSTALL
 1. Close Twine.
@@ -54,8 +54,3 @@ source-changes.patch; the original source is at the link above.
 
 VERSION HISTORY
 v1.0.0  Pinned passages, tag outlines, right-click tag menu, Quick Paste.
-
-
--ADD TO README:
-Check if quickpaste saves after closing.
-5. Start Twine and check Twine > About Twine says 2.12.1.
