@@ -12,7 +12,7 @@ index 6799d50..a45f81b 100644
  	</head>
  	<body>
 diff --git a/public/locales/en-US.json b/public/locales/en-US.json
-index cf5b47f..ce187b7 100644
+index cf5b47f..fc60da7 100644
 --- a/public/locales/en-US.json
 +++ b/public/locales/en-US.json
 @@ -10,7 +10,7 @@
@@ -24,10 +24,24 @@ index cf5b47f..ce187b7 100644
  		"back": "Back",
  		"build": "Build",
  		"cancel": "Cancel",
-@@ -57,6 +57,11 @@
+@@ -57,6 +57,25 @@
  		"view": "View"
  	},
  	"components": {
++		"deleteConfirm": {
++			"hint": "You can undo this with Ctrl+Z.",
++			"many": "Delete {{count}} passages?",
++			"one": "Delete \"{{name}}\"?"
++		},
++		"passageContextMenu": {
++			"branch": "Branch",
++			"connect": "Connect",
++			"delete": "Delete",
++			"deleteMany": "Delete {{count}} passages",
++			"duplicate": "Duplicate",
++			"duplicateMany": "Duplicate {{count}} passages",
++			"rename": "Rename"
++		},
 +		"passageTagMenu": {
 +			"noTags": "No tags yet. Add one from a passage editor first.",
 +			"titleMany": "Tags for {{count}} passages",
@@ -36,7 +50,7 @@ index cf5b47f..ce187b7 100644
  		"addTagButton": {
  			"alreadyAdded": "This tag name has already been added.",
  			"addLabel": "Add Tag",
-@@ -158,7 +163,10 @@
+@@ -158,7 +177,10 @@
  			"codeRepo": "Visit Source Code Repository",
  			"license": "This application is released under the <a href=\"https://www.gnu.org/licenses/gpl-3.0.html\">GPL v3 license</a>, but any work created with it may be released under any terms, including commercial ones.",
  			"localizationHeader": "Localizations",
@@ -48,27 +62,46 @@ index cf5b47f..ce187b7 100644
  			"twineDescription": "Twine is an open-source application for telling interactive, nonlinear stories."
  		},
  		"appDonation": {
-@@ -169,6 +177,9 @@
+@@ -169,10 +191,15 @@
  			"title": "Support Twine Development"
  		},
  		"appPrefs": {
-+			"passageTagOutlines": "Show tag colors as outlines (turn off for the original thin stripe)",
++			"linkTemplate": "Link template",
++			"linkTemplateHelp": "Used by Branch. {passage} is replaced with the new passage name.",
 +			"quickPasteText": "Quick Paste text",
 +			"quickPasteTextHelp": "Inserted at the text cursor when you click Quick Paste in a passage editor.",
  			"codeEditorFont": "Code Editor Font",
  			"codeEditorFontScale": "Code Editor Font Size",
  			"dialogWidth": "Dialog Width",
-@@ -197,6 +208,9 @@
+ 			"dialogWidths": {
++				"custom": "Custom ({{width}}px)",
+ 				"default": "Default",
+ 				"wider": "Wider",
+ 				"widest": "Widest"
+@@ -184,8 +211,9 @@
+ 			"passageEditorFontScale": "Passage Editor Font Size",
+ 			"passageTagDisplay": "Show Passage Tags As",
+ 			"passageTagDisplays": {
+-				"color": "Color",
+-				"name": "Name"
++				"color": "Color Stripe",
++				"name": "Name",
++				"outline": "Outline"
+ 			},
+ 			"themeLight": "Light",
+ 			"themeDark": "Dark",
+@@ -197,6 +225,10 @@
  		"passageEdit": {
  			"editorCrashed": "Something went wrong with this editor. Try closing it and editing this passage again.",
  			"passageTextEditorLabel": "Passage Text",
++			"array": "Array",
 +			"pin": "Pin",
 +			"quickPaste": "Quick Paste",
 +			"quickPasteEmpty": "Quick Paste (set text in Preferences)",
  			"passageTextPlaceholder": "Enter the body text of your passage here. To link to another passage, put two square brackets around its name, [[like this]].",
  			"setAsStart": "Start Story Here",
  			"size": "Size",
-@@ -303,7 +317,13 @@
+@@ -303,7 +335,13 @@
  			"storyRename": "Something went wrong while renaming a story.",
  			"storySave": "Something went wrong while saving a story."
  		},
@@ -82,7 +115,7 @@ index cf5b47f..ce187b7 100644
  			"checkForUpdates": "Check for Updates...",
  			"disableHardwareAcceleration": "Disable Hardware Acceleration",
  			"edit": "Edit",
-@@ -323,6 +343,9 @@
+@@ -323,6 +361,9 @@
  		"storiesDirectoryName": "Stories",
  		"updateCheck": {
  			"download": "Download",
@@ -92,7 +125,18 @@ index cf5b47f..ce187b7 100644
  			"error": "Something went wrong while checking for an updated version of Twine.",
  			"updateAvailable": "A newer version of Twine is available.",
  			"upToDate": "This is the newest version of Twine available."
-@@ -407,7 +430,7 @@
+@@ -352,6 +393,10 @@
+ 				"publishToFile": "Publish to File",
+ 				"selectAllPassages": "Select All Passages"
+ 			},
++			"zoomSelect": {
++				"fit": "Fit all passages",
++				"legend": "Zoom"
++			},
+ 			"zoomButtons": {
+ 				"legend": "Zoom",
+ 				"storyStructure": "Show Story Structure Only",
+@@ -407,7 +452,7 @@
  	},
  	"routeActions": {
  		"app": {
@@ -101,20 +145,40 @@ index cf5b47f..ce187b7 100644
  			"preferences": "Preferences",
  			"reportBug": "Report a Bug",
  			"storyFormats": "Story Formats"
+@@ -441,6 +486,11 @@
+ 	},
+ 	"undoChange": {
+ 		"addTag": "Add Tag",
++		"connectPassages": "Connect Passages",
++		"resizePassage": "Resize Passage",
++		"branchPassage": "Branch Passage",
++		"duplicatePassages": "Duplicate Passages",
++		"renamePassage": "Rename Passage",
+ 		"changeTagColor": "Change Tag Color",
+ 		"newPassage": "New Passage",
+ 		"deletePassage": "Delete Passage",
+diff --git a/src/components/control/text-select.css b/src/components/control/text-select.css
+index 73aa084..e791175 100644
+--- a/src/components/control/text-select.css
++++ b/src/components/control/text-select.css
+@@ -37,6 +37,12 @@
+ 	the select and make it unreadable.
+ 	*/
+ 	color: initial;
++	/*
++	In dark mode the open list can come up white while the text stays light, so
++	give the options the theme's own colors.
++	*/
++	background-color: var(--white);
++	color: var(--dark-gray);
+ }
+ 
+ .text-select-control select:focus-visible {
 diff --git a/src/components/passage/__tests__/passage-card.test.tsx b/src/components/passage/__tests__/passage-card.test.tsx
-index 5db92d4..00f4909 100644
+index 5db92d4..724de67 100644
 --- a/src/components/passage/__tests__/passage-card.test.tsx
 +++ b/src/components/passage/__tests__/passage-card.test.tsx
-@@ -4,6 +4,8 @@ import * as detectIt from 'detect-it';
- import {axe} from 'jest-axe';
- import * as React from 'react';
- import {fakePassage} from '../../../test-util';
-+import {PrefsContext} from '../../../store/prefs';
-+import {defaults} from '../../../store/prefs/defaults';
- import {passageIsEmpty} from '../../../util/passage-is-empty';
- import {PassageCard, PassageCardProps} from '../passage-card';
- 
-@@ -107,12 +109,70 @@ describe('<PassageCard>', () => {
+@@ -107,12 +107,60 @@ describe('<PassageCard>', () => {
  	});
  
  	describe("When the tagDisplay prop is 'color'", () => {
@@ -127,7 +191,8 @@ index 5db92d4..00f4909 100644
 -				'mock-tag-1 mock-tag-2'
 +			renderComponent({
 +				passage,
-+				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'none'}
++				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'none'},
++				tagDisplay: 'outline'
 +			});
 +
 +			const card = document.querySelector('.passage-card') as HTMLElement;
@@ -143,7 +208,8 @@ index 5db92d4..00f4909 100644
 +
 +			renderComponent({
 +				passage,
-+				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'blue'}
++				tagColors: {'mock-tag-1': 'red', 'mock-tag-2': 'blue'},
++				tagDisplay: 'outline'
 +			});
 +
 +			const outline = (
@@ -154,26 +220,14 @@ index 5db92d4..00f4909 100644
 +			expect(outline).toContain('var(--blue) 180.00deg 360.00deg');
 +		});
 +
-+		it('shows a <TagStripe> instead of an outline when outlines are turned off', () => {
++		it('shows a <TagStripe>, not an outline, in color mode', () => {
 +			const passage = fakePassage({tags: ['mock-tag-1']});
 +
-+			render(
-+				<PrefsContext.Provider
-+					value={{
-+						dispatch: jest.fn(),
-+						prefs: {...defaults(), passageTagOutlines: false}
-+					}}
-+				>
-+					<PassageCard
-+						onDeselect={jest.fn()}
-+						onEdit={jest.fn()}
-+						onSelect={jest.fn()}
-+						passage={passage}
-+						tagColors={{'mock-tag-1': 'red'}}
-+						tagDisplay="color"
-+					/>
-+				</PrefsContext.Provider>
-+			);
++			renderComponent({
++				passage,
++				tagColors: {'mock-tag-1': 'red'},
++				tagDisplay: 'color'
++			});
 +			expect(document.querySelector('.passage-card')).not.toHaveClass(
 +				'tag-outlined'
 +			);
@@ -183,13 +237,13 @@ index 5db92d4..00f4909 100644
 +		it("doesn't outline a card with no colored tags", () => {
 +			const passage = fakePassage({tags: ['mock-tag-1']});
 +
-+			renderComponent({passage, tagColors: {}});
++			renderComponent({passage, tagColors: {}, tagDisplay: 'outline'});
 +			expect(document.querySelector('.passage-card')).not.toHaveClass(
 +				'tag-outlined'
  			);
  		});
  
-@@ -125,7 +185,7 @@ describe('<PassageCard>', () => {
+@@ -125,7 +173,7 @@ describe('<PassageCard>', () => {
  	});
  
  	describe("When the tagDisplay prop is 'name'", () => {
@@ -232,11 +286,157 @@ index 0000000..84b4ece
 +		expect(result).toContain('var(--blue) 236.31deg 360.00deg');
 +	});
 +});
+diff --git a/src/components/passage/delete-confirm.css b/src/components/passage/delete-confirm.css
+new file mode 100644
+index 0000000..6702fd0
+--- /dev/null
++++ b/src/components/passage/delete-confirm.css
+@@ -0,0 +1,64 @@
++@import '../../styles/metrics.css';
++
++.delete-confirm-backdrop {
++	align-items: center;
++	background: rgba(0, 0, 0, 0.25);
++	display: flex;
++	inset: 0;
++	justify-content: center;
++	position: fixed;
++	z-index: 4000;
++}
++
++.delete-confirm {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
++	color: var(--black);
++	max-width: 420px;
++	min-width: 300px;
++	padding: calc(2 * var(--grid-size));
++}
++
++.delete-confirm p {
++	margin: 0 0 var(--grid-size);
++}
++
++.delete-confirm-message {
++	font-weight: bold;
++	overflow-wrap: anywhere;
++}
++
++.delete-confirm-hint {
++	font-size: 85%;
++	opacity: 0.7;
++}
++
++.delete-confirm-buttons {
++	display: flex;
++	gap: var(--grid-size);
++	justify-content: flex-end;
++	margin-top: calc(2 * var(--grid-size));
++}
++
++.delete-confirm-buttons button {
++	background: var(--light-gray);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: inherit;
++	cursor: pointer;
++	font: inherit;
++	padding: calc(var(--grid-size) / 2) calc(2 * var(--grid-size));
++}
++
++.delete-confirm-buttons button:last-child {
++	background: var(--red);
++	border-color: var(--red);
++	color: var(--white);
++}
++
++.delete-confirm-buttons button:focus-visible {
++	outline: 3px solid var(--blue);
++	outline-offset: 2px;
++}
+diff --git a/src/components/passage/delete-confirm.tsx b/src/components/passage/delete-confirm.tsx
+new file mode 100644
+index 0000000..1954248
+--- /dev/null
++++ b/src/components/passage/delete-confirm.tsx
+@@ -0,0 +1,70 @@
++import * as React from 'react';
++import {useTranslation} from 'react-i18next';
++import './delete-confirm.css';
++
++export interface DeleteConfirmProps {
++	/**
++	 * Names of the passages about to be deleted.
++	 */
++	names: string[];
++	onCancel: () => void;
++	onConfirm: () => void;
++}
++
++/**
++ * A small "are you sure?" window for deleting passages with the keyboard.
++ * Enter confirms (the Delete button starts focused) and Escape cancels.
++ */
++export const DeleteConfirm: React.FC<DeleteConfirmProps> = ({
++	names,
++	onCancel,
++	onConfirm
++}) => {
++	const {t} = useTranslation();
++	const confirmButton = React.useRef<HTMLButtonElement>(null);
++
++	React.useEffect(() => {
++		confirmButton.current?.focus();
++	}, []);
++
++	React.useEffect(() => {
++		function handleKeyDown(event: KeyboardEvent) {
++			if (event.key === 'Escape') {
++				event.preventDefault();
++				event.stopPropagation();
++				onCancel();
++			}
++		}
++
++		window.addEventListener('keydown', handleKeyDown, true);
++		return () => window.removeEventListener('keydown', handleKeyDown, true);
++	}, [onCancel]);
++
++	return (
++		<div className="delete-confirm-backdrop" onMouseDown={onCancel}>
++			<div
++				aria-modal="true"
++				className="delete-confirm"
++				onMouseDown={event => event.stopPropagation()}
++				role="alertdialog"
++			>
++				<p className="delete-confirm-message">
++					{names.length === 1
++						? t('components.deleteConfirm.one', {name: names[0]})
++						: t('components.deleteConfirm.many', {count: names.length})}
++				</p>
++				<p className="delete-confirm-hint">
++					{t('components.deleteConfirm.hint')}
++				</p>
++				<div className="delete-confirm-buttons">
++					<button onClick={onCancel} type="button">
++						{t('common.cancel')}
++					</button>
++					<button onClick={onConfirm} ref={confirmButton} type="button">
++						{t('common.delete')}
++					</button>
++				</div>
++			</div>
++		</div>
++	);
++};
 diff --git a/src/components/passage/passage-card.css b/src/components/passage/passage-card.css
-index d8561f2..5200768 100644
+index d8561f2..160374c 100644
 --- a/src/components/passage/passage-card.css
 +++ b/src/components/passage/passage-card.css
-@@ -95,3 +95,20 @@
+@@ -95,3 +95,45 @@
  [data-app-theme='dark'] .passage-card.empty.selected .card {
  	background: hsla(212, 90%, 60%, 0.2);
  }
@@ -257,18 +457,42 @@ index d8561f2..5200768 100644
 +	position: absolute;
 +	z-index: -1;
 +}
++
++/* Corner handle for resizing a card: an invisible grab area that shows a circle
++   when the mouse is over it. */
++
++.passage-card .passage-resize-handle {
++	border-radius: 50%;
++	bottom: -8px;
++	cursor: nwse-resize;
++	height: 22px;
++	position: absolute;
++	right: -8px;
++	width: 22px;
++	z-index: 2;
++}
++
++.passage-card .passage-resize-handle:hover,
++.passage-card.resizing .passage-resize-handle {
++	background: var(--blue);
++	border: 3px solid var(--white);
++	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
++}
++
++.passage-card.resizing {
++	z-index: 5;
++}
 diff --git a/src/components/passage/passage-card.tsx b/src/components/passage/passage-card.tsx
-index e976d36..71e6504 100644
+index e976d36..45d8ce0 100644
 --- a/src/components/passage/passage-card.tsx
 +++ b/src/components/passage/passage-card.tsx
-@@ -5,11 +5,13 @@ import {DraggableCore, DraggableCoreProps} from 'react-draggable';
- import {useTranslation} from 'react-i18next';
+@@ -6,10 +6,12 @@ import {useTranslation} from 'react-i18next';
  import {CardContent} from '../container/card';
  import {SelectableCard} from '../container/card/selectable-card';
-+import {usePrefsContext} from '../../store/prefs';
  import {Passage, TagColors} from '../../store/stories';
 -import {TagStripe} from '../tag/tag-stripe';
  import {passageIsEmpty} from '../../util/passage-is-empty';
++import {resizedPassageSize} from '../../util/passage-resize';
 +import {tagOutlineGradient} from './tag-outline';
  import './passage-card.css';
 -import { TagBadges } from '../tag/tag-badges';
@@ -277,7 +501,16 @@ index e976d36..71e6504 100644
  
  export interface PassageCardProps {
  	onEdit: (passage: Passage) => void;
-@@ -39,14 +41,43 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -20,7 +22,7 @@ export interface PassageCardProps {
+ 	onSelect: (passage: Passage, exclusive: boolean) => void;
+ 	passage: Passage;
+ 	tagColors: TagColors;
+-	tagDisplay: 'color' | 'name';
++	tagDisplay: 'color' | 'name' | 'outline';
+ }
+ 
+ // Needs to fill a large-sized passage card.
+@@ -39,19 +41,101 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  		tagDisplay
  	} = props;
  	const {t} = useTranslation();
@@ -286,9 +519,8 @@ index e976d36..71e6504 100644
 +	// in half, three in thirds, and so on. Uncolored tags are ignored. With
 +	// outlines off we fall back to the original thin stripe.
 +
-+	const {prefs} = usePrefsContext();
 +	const outline = React.useMemo(() => {
-+		if (tagDisplay !== 'color' || !prefs.passageTagOutlines) {
++		if (tagDisplay !== 'outline') {
 +			return undefined;
 +		}
 +
@@ -301,31 +533,95 @@ index e976d36..71e6504 100644
 +		}
 +
 +		return tagOutlineGradient(colors, passage.width, passage.height);
-+	}, [
-+		passage.height,
-+		passage.tags,
-+		passage.width,
-+		prefs.passageTagOutlines,
-+		tagColors,
-+		tagDisplay
-+	]);
++	}, [passage.height, passage.tags, passage.width, tagColors, tagDisplay]);
++	const container = React.useRef<HTMLDivElement>(null);
++
++	// While the corner handle is being dragged we show a preview of the new size
++	// and only save it when the mouse is let go.
++
++	const [resizePreview, setResizePreview] = React.useState<{
++		height: number;
++		width: number;
++	}>();
++	const handleResizeMouseDown = (event: React.MouseEvent) => {
++		if (event.button !== 0 || !container.current) {
++			return;
++		}
++
++		event.preventDefault();
++		event.stopPropagation();
++
++		const startX = event.clientX;
++		const startY = event.clientY;
++		const start = {height: passage.height, width: passage.width};
++		const scale =
++			container.current.getBoundingClientRect().width / passage.width;
++		const snap =
++			container.current
++				.closest('.story-edit-route')
++				?.getAttribute('data-snap-to-grid') === 'true';
++		let latest = start;
++
++		function handleMove(moveEvent: MouseEvent) {
++			latest = resizedPassageSize(
++				start,
++				moveEvent.clientX - startX,
++				moveEvent.clientY - startY,
++				scale,
++				snap
++			);
++			setResizePreview(latest);
++		}
++
++		function handleUp() {
++			window.removeEventListener('mousemove', handleMove);
++			window.removeEventListener('mouseup', handleUp);
++			setResizePreview(undefined);
++			window.dispatchEvent(
++				new CustomEvent('qol:passage-resize', {
++					detail: {...latest, passageId: passage.id}
++				})
++			);
++		}
++
++		window.addEventListener('mousemove', handleMove);
++		window.addEventListener('mouseup', handleUp);
++	};
  	const className = React.useMemo(
  		() =>
  			classNames('passage-card', {
  				empty: passageIsEmpty(passage),
++				resizing: !!resizePreview,
  				selected: passage.selected,
 -				[`tag-display-${tagDisplay}`]: true
 +				[`tag-display-${tagDisplay}`]: true,
 +				'tag-outlined': !!outline
  			}),
 -		[passage, tagDisplay]
-+		[outline, passage, tagDisplay]
++		[outline, passage, resizePreview, tagDisplay]
  	);
- 	const container = React.useRef<HTMLDivElement>(null);
+-	const container = React.useRef<HTMLDivElement>(null);
  	const excerpt = React.useMemo(() => {
-@@ -65,13 +96,15 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 		if (passage.text.length > 0) {
+-			return passage.text.substring(0, excerptLength);
++			// Bigger cards have room for more of the text.
++
++			return passage.text.substring(
++				0,
++				Math.round(
++					excerptLength *
++						Math.max(1, (passage.width * passage.height) / (100 * 100))
++				)
++			);
+ 		}
+ 
+ 		return (
+@@ -63,15 +147,24 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+ 				)}
+ 			</span>
  		);
- 	}, [passage.text, t]);
+-	}, [passage.text, t]);
++	}, [passage.height, passage.text, passage.width, t]);
  	const style = React.useMemo(
 -		() => ({
 -			height: passage.height,
@@ -337,16 +633,23 @@ index e976d36..71e6504 100644
 +		(): React.CSSProperties =>
 +			({
 +				'--tag-outline': outline,
-+				height: passage.height,
++				height: resizePreview?.height ?? passage.height,
 +				left: passage.left,
 +				top: passage.top,
-+				width: passage.width
++				width: resizePreview?.width ?? passage.width
 +			}) as React.CSSProperties,
-+		[outline, passage.height, passage.left, passage.top, passage.width]
++		[
++			outline,
++			passage.height,
++			passage.left,
++			passage.top,
++			passage.width,
++			resizePreview
++		]
  	);
  	const handleMouseDown = React.useCallback(
  		(event: MouseEvent) => {
-@@ -111,7 +144,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -111,7 +204,13 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  			onDrag={onDrag}
  			onStop={onDragStop}
  		>
@@ -361,12 +664,12 @@ index e976d36..71e6504 100644
  				<SelectableCard
  					highlighted={passage.highlighted}
  					label={passage.name}
-@@ -119,10 +158,14 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
+@@ -119,11 +218,20 @@ export const PassageCard: React.FC<PassageCardProps> = React.memo(props => {
  					onSelect={handleSelect}
  					selected={passage.selected}
  				>
 -					{tagDisplay === 'color' && <TagStripe tagColors={tagColors} tags={passage.tags} />}
-+					{tagDisplay === 'color' && !prefs.passageTagOutlines && (
++					{tagDisplay === 'color' && (
 +						<TagStripe tagColors={tagColors} tags={passage.tags} />
 +					)}
  					<h2>{passage.name}</h2>
@@ -376,17 +679,235 @@ index e976d36..71e6504 100644
 +						<TagBadges tagColors={tagColors} tags={passage.tags} />
 +					)}
  				</SelectableCard>
++				<div
++					aria-hidden="true"
++					className="passage-resize-handle"
++					onMouseDown={handleResizeMouseDown}
++				/>
  			</div>
  		</DraggableCore>
-diff --git a/src/components/passage/passage-tag-menu.css b/src/components/passage/passage-tag-menu.css
+ 	);
+diff --git a/src/components/passage/passage-connect-mode.css b/src/components/passage/passage-connect-mode.css
 new file mode 100644
-index 0000000..b569eb9
+index 0000000..2818e87
 --- /dev/null
-+++ b/src/components/passage/passage-tag-menu.css
-@@ -0,0 +1,66 @@
++++ b/src/components/passage/passage-connect-mode.css
+@@ -0,0 +1,34 @@
++.passage-connect-line {
++	height: 100vh;
++	left: 0;
++	pointer-events: none;
++	position: fixed;
++	top: 0;
++	width: 100vw;
++	z-index: 2500;
++}
++
++.passage-connect-line line {
++	stroke: var(--blue);
++	stroke-dasharray: 8 6;
++	stroke-width: 3;
++}
++
++.passage-connect-line circle {
++	fill: var(--blue);
++}
++
++body.connect-mode,
++body.connect-mode * {
++	cursor: crosshair !important;
++}
++
++.passage-card.connect-source,
++.passage-card.connect-target {
++	outline: 3px solid var(--blue);
++	outline-offset: 4px;
++}
++
++.passage-card.connect-target {
++	background: rgba(0, 120, 255, 0.12);
++}
+diff --git a/src/components/passage/passage-connect-mode.tsx b/src/components/passage/passage-connect-mode.tsx
+new file mode 100644
+index 0000000..12c6883
+--- /dev/null
++++ b/src/components/passage/passage-connect-mode.tsx
+@@ -0,0 +1,166 @@
++import * as React from 'react';
++import {usePrefsContext} from '../../store/prefs';
++import {Story, updatePassage} from '../../store/stories';
++import {useUndoableStoriesContext} from '../../store/undoable-stories';
++import {appendLink, makeLink} from '../../util/branch-link';
++import {parseLinks} from '../../util/parse-links';
++import './passage-connect-mode.css';
++
++export interface PassageConnectModeProps {
++	onDone: () => void;
++	sourceId: string;
++	story: Story;
++}
++
++/**
++ * Connect mode: the user has chosen Connect on one passage and now clicks a
++ * second one. The first gets a link to the second. A line follows the mouse
++ * from the first passage, the passage under the mouse is highlighted, and Esc
++ * or a click anywhere else cancels.
++ */
++export const PassageConnectMode: React.FC<PassageConnectModeProps> = ({
++	onDone,
++	sourceId,
++	story
++}) => {
++	const {dispatch} = useUndoableStoriesContext();
++	const {prefs} = usePrefsContext();
++	const [line, setLine] = React.useState<{
++		fromX: number;
++		fromY: number;
++		toX: number;
++		toY: number;
++	}>();
++	const latest = React.useRef({dispatch, onDone, prefs, story});
++
++	latest.current = {dispatch, onDone, prefs, story};
++
++	React.useEffect(() => {
++		const sourceCard = () =>
++			document.querySelector<HTMLElement>(
++				`.passage-card[data-passage-id="${sourceId}"]`
++			);
++		let hovered: Element | null = null;
++
++		function cardAt(x: number, y: number) {
++			return document
++				.elementFromPoint(x, y)
++				?.closest<HTMLElement>('.passage-card[data-passage-id]');
++		}
++
++		function handleMove(event: MouseEvent) {
++			const rect = sourceCard()?.getBoundingClientRect();
++
++			if (rect) {
++				setLine({
++					fromX: rect.left + rect.width / 2,
++					fromY: rect.top + rect.height / 2,
++					toX: event.clientX,
++					toY: event.clientY
++				});
++			}
++
++			const card = cardAt(event.clientX, event.clientY);
++			const target = card && card.dataset.passageId !== sourceId ? card : null;
++
++			if (target !== hovered) {
++				hovered?.classList.remove('connect-target');
++				target?.classList.add('connect-target');
++				hovered = target;
++			}
++		}
++
++		function connect(targetId: string) {
++			const {dispatch, prefs, story} = latest.current;
++			const source = story.passages.find(p => p.id === sourceId);
++			const target = story.passages.find(p => p.id === targetId);
++
++			if (!source || !target || parseLinks(source.text).includes(target.name)) {
++				return;
++			}
++
++			dispatch(
++				updatePassage(story, source, {
++					text: appendLink(
++						source.text,
++						makeLink(prefs.linkTemplate, target.name)
++					)
++				}),
++				'undoChange.connectPassages'
++			);
++		}
++
++		// While connecting, clicks must not select, drag or open passages, so we
++		// intercept them before Twine sees them.
++
++		function handleDown(event: MouseEvent) {
++			event.preventDefault();
++			event.stopPropagation();
++
++			const card = cardAt(event.clientX, event.clientY);
++
++			if (
++				event.button === 0 &&
++				card?.dataset.passageId &&
++				card.dataset.passageId !== sourceId
++			) {
++				connect(card.dataset.passageId);
++			}
++
++			latest.current.onDone();
++		}
++
++		function swallow(event: Event) {
++			event.preventDefault();
++			event.stopPropagation();
++		}
++
++		function handlePointerDown(event: Event) {
++			event.stopPropagation();
++		}
++
++		function handleKey(event: KeyboardEvent) {
++			if (event.key === 'Escape') {
++				event.stopPropagation();
++				latest.current.onDone();
++			}
++		}
++
++		sourceCard()?.classList.add('connect-source');
++		document.body.classList.add('connect-mode');
++		window.addEventListener('mousemove', handleMove, true);
++		window.addEventListener('pointerdown', handlePointerDown, true);
++		window.addEventListener('mousedown', handleDown, true);
++		window.addEventListener('mouseup', swallow, true);
++		window.addEventListener('click', swallow, true);
++		window.addEventListener('dblclick', swallow, true);
++		window.addEventListener('contextmenu', swallow, true);
++		window.addEventListener('keydown', handleKey, true);
++
++		return () => {
++			sourceCard()?.classList.remove('connect-source');
++			hovered?.classList.remove('connect-target');
++			document.body.classList.remove('connect-mode');
++			window.removeEventListener('mousemove', handleMove, true);
++			window.removeEventListener('pointerdown', handlePointerDown, true);
++			window.removeEventListener('mousedown', handleDown, true);
++			window.removeEventListener('mouseup', swallow, true);
++			window.removeEventListener('click', swallow, true);
++			window.removeEventListener('dblclick', swallow, true);
++			window.removeEventListener('contextmenu', swallow, true);
++			window.removeEventListener('keydown', handleKey, true);
++		};
++	}, [sourceId]);
++
++	if (!line) {
++		return null;
++	}
++
++	return (
++		<svg className="passage-connect-line">
++			<line x1={line.fromX} x2={line.toX} y1={line.fromY} y2={line.toY} />
++			<circle cx={line.fromX} cy={line.fromY} r={6} />
++			<circle cx={line.toX} cy={line.toY} r={4} />
++		</svg>
++	);
++};
+diff --git a/src/components/passage/passage-context-menu.css b/src/components/passage/passage-context-menu.css
+new file mode 100644
+index 0000000..69f3ff9
+--- /dev/null
++++ b/src/components/passage/passage-context-menu.css
+@@ -0,0 +1,125 @@
 +@import '../../styles/metrics.css';
 +
-+.passage-tag-menu {
++.passage-context-menu {
 +	background: var(--white);
 +	border: 1px solid var(--gray);
 +	border-radius: var(--corner-round);
@@ -402,8 +923,8 @@ index 0000000..b569eb9
 +	z-index: 3000;
 +}
 +
-+.passage-tag-menu-title,
-+.passage-tag-menu-empty {
++.passage-context-menu-title,
++.passage-context-menu-empty {
 +	font-size: 85%;
 +	max-width: 280px;
 +	opacity: 0.7;
@@ -413,11 +934,11 @@ index 0000000..b569eb9
 +	white-space: nowrap;
 +}
 +
-+.passage-tag-menu-empty {
++.passage-context-menu-empty {
 +	white-space: normal;
 +}
 +
-+.passage-tag-menu-item {
++.passage-context-menu-item {
 +	align-items: center;
 +	background: transparent;
 +	border: 0;
@@ -430,19 +951,19 @@ index 0000000..b569eb9
 +	text-align: left;
 +}
 +
-+.passage-tag-menu-item:hover,
-+.passage-tag-menu-item:focus-visible {
++.passage-context-menu-item:hover,
++.passage-context-menu-item:focus-visible {
 +	background: var(--light-gray);
 +	outline: none;
 +}
 +
-+.passage-tag-menu-item .check {
++.passage-context-menu-item .check {
 +	display: inline-block;
 +	text-align: center;
 +	width: 1em;
 +}
 +
-+.passage-tag-menu-item .swatch {
++.passage-context-menu-item .swatch {
 +	border: 1px solid var(--gray);
 +	border-radius: 50%;
 +	display: inline-block;
@@ -450,19 +971,89 @@ index 0000000..b569eb9
 +	height: 12px;
 +	width: 12px;
 +}
-diff --git a/src/components/passage/passage-tag-menu.tsx b/src/components/passage/passage-tag-menu.tsx
++
++.passage-context-menu-divider {
++	border-top: 1px solid var(--light-gray);
++	margin: calc(var(--grid-size) / 2) 0;
++}
++
++.passage-context-menu-item:disabled {
++	cursor: default;
++	opacity: 0.4;
++}
++
++.passage-context-menu-item:disabled:hover {
++	background: transparent;
++}
++
++.passage-rename-prompt {
++	gap: calc(var(--grid-size) / 2);
++	padding: var(--grid-size);
++}
++
++.passage-rename-prompt .passage-context-menu-title {
++	padding: 0;
++}
++
++.passage-rename-prompt input {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: var(--black);
++	font: inherit;
++	min-width: 260px;
++	padding: calc(var(--grid-size) / 2);
++}
++
++.passage-rename-error {
++	color: var(--red);
++	font-size: 85%;
++}
++
++.passage-rename-buttons {
++	display: flex;
++	gap: calc(var(--grid-size) / 2);
++	justify-content: flex-end;
++}
++
++.passage-rename-buttons button {
++	background: var(--light-gray);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: inherit;
++	cursor: pointer;
++	font: inherit;
++	padding: calc(var(--grid-size) / 4) var(--grid-size);
++}
++
++.passage-rename-buttons button:disabled {
++	cursor: default;
++	opacity: 0.5;
++}
+diff --git a/src/components/passage/passage-context-menu.tsx b/src/components/passage/passage-context-menu.tsx
 new file mode 100644
-index 0000000..4c1c4aa
+index 0000000..17e08ba
 --- /dev/null
-+++ b/src/components/passage/passage-tag-menu.tsx
-@@ -0,0 +1,248 @@
++++ b/src/components/passage/passage-context-menu.tsx
+@@ -0,0 +1,572 @@
 +import * as React from 'react';
 +import {useTranslation} from 'react-i18next';
-+import {Story, storyPassageTags} from '../../store/stories';
++import {usePrefsContext} from '../../store/prefs';
++import {
++	Passage,
++	Story,
++	deletePassages,
++	storyPassageTags,
++	updatePassage
++} from '../../store/stories';
 +import {useUndoableStoriesContext} from '../../store/undoable-stories';
-+import './passage-tag-menu.css';
++import {appendLink, makeLink} from '../../util/branch-link';
++import {rectsIntersect} from '../../util/geometry';
++import {copyName, nextNumberedName} from '../../util/passage-names';
++import {PassageConnectMode} from './passage-connect-mode';
++import './passage-context-menu.css';
 +
-+export interface PassageTagMenuProps {
++export interface PassageContextMenuProps {
 +	story: Story;
 +}
 +
@@ -473,14 +1064,192 @@ index 0000000..4c1c4aa
 +}
 +
 +/**
-+ * Right-click menu for passage cards in the story map. Lists the tags that
-+ * already exist in the story and toggles them on the clicked passage (or on
-+ * every selected passage, if the clicked one is part of a multiple selection).
++ * Finds a free spot for a copy of a passage: to the right of it if there's
++ * room, then below, moving further out until nothing overlaps.
 + */
-+export const PassageTagMenu: React.FC<PassageTagMenuProps> = ({story}) => {
++function placeCopy(
++	passage: Passage,
++	taken: {height: number; left: number; top: number; width: number}[]
++) {
++	const gap = 25;
++
++	for (let step = 1; step <= 30; step++) {
++		const candidates = [
++			{col: step, row: 0},
++			{col: 0, row: step},
++			{col: step, row: step}
++		];
++
++		for (const {col, row} of candidates) {
++			const bounds = {
++				height: passage.height,
++				left: passage.left + col * (passage.width + gap),
++				top: passage.top + row * (passage.height + gap),
++				width: passage.width
++			};
++
++			if (!taken.some(other => rectsIntersect(other, bounds))) {
++				return bounds;
++			}
++		}
++	}
++
++	return {
++		height: passage.height,
++		left: passage.left + 25,
++		top: passage.top + 25,
++		width: passage.width
++	};
++}
++
++/**
++ * Keeps a fixed-position element fully on screen.
++ */
++function useKeepOnScreen(
++	ref: React.RefObject<HTMLElement>,
++	x: number,
++	y: number,
++	active: boolean
++) {
++	React.useLayoutEffect(() => {
++		const el = ref.current;
++
++		if (!active || !el) {
++			return;
++		}
++
++		const rect = el.getBoundingClientRect();
++
++		el.style.left = `${Math.max(4, Math.min(x, window.innerWidth - rect.width - 4))}px`;
++		el.style.top = `${Math.max(4, Math.min(y, window.innerHeight - rect.height - 4))}px`;
++	}, [active, ref, x, y]);
++}
++
++interface RenamePromptProps {
++	onClose: () => void;
++	passage: Passage;
++	story: Story;
++	x: number;
++	y: number;
++}
++
++const RenamePrompt: React.FC<RenamePromptProps> = ({
++	onClose,
++	passage,
++	story,
++	x,
++	y
++}) => {
 +	const {dispatch} = useUndoableStoriesContext();
 +	const {t} = useTranslation();
++	const [name, setName] = React.useState(passage.name);
++	const ref = React.useRef<HTMLFormElement>(null);
++	const input = React.useRef<HTMLInputElement>(null);
++
++	useKeepOnScreen(ref, x, y, true);
++
++	// Start with the current name highlighted, ready to be typed over.
++
++	React.useEffect(() => {
++		input.current?.focus();
++		input.current?.select();
++	}, []);
++
++	React.useEffect(() => {
++		function handleKeyDown(event: KeyboardEvent) {
++			if (event.key === 'Escape') {
++				onClose();
++			}
++		}
++
++		function handleMouseDown(event: MouseEvent) {
++			if (!ref.current?.contains(event.target as Node)) {
++				onClose();
++			}
++		}
++
++		window.addEventListener('keydown', handleKeyDown, true);
++		window.addEventListener('mousedown', handleMouseDown, true);
++		return () => {
++			window.removeEventListener('keydown', handleKeyDown, true);
++			window.removeEventListener('mousedown', handleMouseDown, true);
++		};
++	}, [onClose]);
++
++	let error: string | undefined;
++
++	if (name.trim() === '') {
++		error = t('components.renamePassageButton.emptyName');
++	} else if (story.passages.some(p => p.id !== passage.id && p.name === name)) {
++		error = t('components.renamePassageButton.nameAlreadyUsed');
++	}
++
++	function handleSubmit(event: React.FormEvent) {
++		event.preventDefault();
++
++		if (error) {
++			return;
++		}
++
++		if (name !== passage.name) {
++			// Same options as the editor's Rename button. Links in other passages
++			// are updated by updatePassage itself.
++
++			dispatch(
++				updatePassage(story, passage, {name}, {dontUpdateOthers: true}),
++				'undoChange.renamePassage'
++			);
++		}
++
++		onClose();
++	}
++
++	return (
++		<form
++			className="passage-context-menu passage-rename-prompt"
++			onSubmit={handleSubmit}
++			ref={ref}
++			style={{left: x, top: y}}
++		>
++			<label className="passage-context-menu-title" htmlFor="passage-rename">
++				{t('common.renamePrompt', {name: passage.name})}
++			</label>
++			<input
++				id="passage-rename"
++				onChange={event => setName(event.target.value)}
++				ref={input}
++				spellCheck={false}
++				type="text"
++				value={name}
++			/>
++			{error && <div className="passage-rename-error">{error}</div>}
++			<div className="passage-rename-buttons">
++				<button onClick={onClose} type="button">
++					{t('common.cancel')}
++				</button>
++				<button disabled={!!error} type="submit">
++					{t('common.rename')}
++				</button>
++			</div>
++		</form>
++	);
++};
++
++/**
++ * Right-click menu for passage cards in the story map. Offers Rename, Branch,
++ * Duplicate and Delete, then lists the story's existing tags to toggle on the
++ * clicked passage (or on every selected passage, if the clicked one is part of
++ * a multiple selection).
++ */
++export const PassageContextMenu: React.FC<PassageContextMenuProps> = ({
++	story
++}) => {
++	const {dispatch} = useUndoableStoriesContext();
++	const {prefs} = usePrefsContext();
++	const {t} = useTranslation();
 +	const [menu, setMenu] = React.useState<MenuState | null>(null);
++	const [renaming, setRenaming] = React.useState<MenuState | null>(null);
++	const [connecting, setConnecting] = React.useState<string | null>(null);
 +	const menuRef = React.useRef<HTMLDivElement>(null);
 +	const storyRef = React.useRef(story);
 +	const rightDown = React.useRef<{x: number; y: number} | null>(null);
@@ -533,6 +1302,7 @@ index 0000000..4c1c4aa
 +					: [clicked.id];
 +
 +			event.preventDefault();
++			setRenaming(null);
 +			setMenu({passageIds, x: event.clientX, y: event.clientY});
 +		}
 +
@@ -584,28 +1354,31 @@ index 0000000..4c1c4aa
 +		};
 +	}, [menu]);
 +
-+	// Keep the menu on screen.
++	useKeepOnScreen(menuRef, menu?.x ?? 0, menu?.y ?? 0, !!menu);
 +
-+	React.useLayoutEffect(() => {
-+		const el = menuRef.current;
-+
-+		if (!menu || !el) {
-+			return;
-+		}
-+
-+		const rect = el.getBoundingClientRect();
-+		const left = Math.max(
-+			4,
-+			Math.min(menu.x, window.innerWidth - rect.width - 4)
++	if (connecting) {
++		return (
++			<PassageConnectMode
++				onDone={() => setConnecting(null)}
++				sourceId={connecting}
++				story={story}
++			/>
 +		);
-+		const top = Math.max(
-+			4,
-+			Math.min(menu.y, window.innerHeight - rect.height - 4)
-+		);
++	}
 +
-+		el.style.left = `${left}px`;
-+		el.style.top = `${top}px`;
-+	}, [menu]);
++	if (renaming) {
++		const passage = story.passages.find(p => p.id === renaming.passageIds[0]);
++
++		return passage ? (
++			<RenamePrompt
++				onClose={() => setRenaming(null)}
++				passage={passage}
++				story={story}
++				x={renaming.x}
++				y={renaming.y}
++			/>
++		) : null;
++	}
 +
 +	if (!menu) {
 +		return null;
@@ -619,11 +1392,79 @@ index 0000000..4c1c4aa
 +		return null;
 +	}
 +
++	const single = targets.length === 1 ? targets[0] : undefined;
++
 +	// Tags that are in use, plus tags that still have a color set from earlier.
 +
 +	const tags = Array.from(
 +		new Set([...storyPassageTags(story), ...Object.keys(story.tagColors)])
 +	).sort((a, b) => a.localeCompare(b));
++
++	function handleRename() {
++		setRenaming(menu);
++		setMenu(null);
++	}
++
++	function handleConnect() {
++		if (single) {
++			setConnecting(single.id);
++			setMenu(null);
++		}
++	}
++
++	function handleBranch() {
++		if (!single) {
++			return;
++		}
++
++		// Add a link at the end of the passage. Twine creates and positions the
++		// newly linked passage itself.
++
++		const newName = nextNumberedName(
++			single.name,
++			story.passages.map(passage => passage.name)
++		);
++		const text = appendLink(single.text, makeLink(prefs.linkTemplate, newName));
++
++		dispatch(updatePassage(story, single, {text}), 'undoChange.branchPassage');
++		setMenu(null);
++	}
++
++	function handleDuplicate() {
++		const names = story.passages.map(passage => passage.name);
++		const taken = story.passages.map(passage => ({...passage}));
++		const props = targets.map(target => {
++			const name = copyName(target.name, names);
++			const bounds = placeCopy(target, taken);
++
++			names.push(name);
++			taken.push({...target, ...bounds});
++
++			return {
++				...bounds,
++				name,
++				story: story.id,
++				tags: [...target.tags],
++				text: target.text
++			};
++		});
++
++		dispatch(
++			{type: 'createPassages', props, storyId: story.id},
++			'undoChange.duplicatePassages'
++		);
++		setMenu(null);
++	}
++
++	function handleDelete() {
++		dispatch(
++			deletePassages(story, targets),
++			targets.length === 1
++				? 'undoChange.deletePassage'
++				: 'undoChange.deletePassages'
++		);
++		setMenu(null);
++	}
 +
 +	function toggle(tag: string) {
 +		const allHave = targets.every(passage => passage.tags.includes(tag));
@@ -653,24 +1494,87 @@ index 0000000..4c1c4aa
 +			},
 +			allHave ? 'undoChange.removeTag' : 'undoChange.addTag'
 +		);
-+		setMenu(null);
++
++		// The menu stays open so several tags can be changed in a row.
 +	}
 +
 +	return (
 +		<div
-+			className="passage-tag-menu"
++			className="passage-context-menu"
 +			onContextMenu={event => event.preventDefault()}
 +			ref={menuRef}
 +			role="menu"
 +			style={{left: menu.x, top: menu.y}}
 +		>
-+			<div className="passage-tag-menu-title">
++			<button
++				className="passage-context-menu-item"
++				disabled={!single}
++				onClick={handleRename}
++				role="menuitem"
++				type="button"
++			>
++				<span className="name">
++					{t('components.passageContextMenu.rename')}
++				</span>
++			</button>
++			<button
++				className="passage-context-menu-item"
++				disabled={!single}
++				onClick={handleBranch}
++				role="menuitem"
++				type="button"
++			>
++				<span className="name">
++					{t('components.passageContextMenu.branch')}
++				</span>
++			</button>
++			<button
++				className="passage-context-menu-item"
++				disabled={!single}
++				onClick={handleConnect}
++				role="menuitem"
++				type="button"
++			>
++				<span className="name">
++					{t('components.passageContextMenu.connect')}
++				</span>
++			</button>
++			<button
++				className="passage-context-menu-item"
++				onClick={handleDuplicate}
++				role="menuitem"
++				type="button"
++			>
++				<span className="name">
++					{targets.length === 1
++						? t('components.passageContextMenu.duplicate')
++						: t('components.passageContextMenu.duplicateMany', {
++								count: targets.length
++							})}
++				</span>
++			</button>
++			<button
++				className="passage-context-menu-item"
++				onClick={handleDelete}
++				role="menuitem"
++				type="button"
++			>
++				<span className="name">
++					{targets.length === 1
++						? t('components.passageContextMenu.delete')
++						: t('components.passageContextMenu.deleteMany', {
++								count: targets.length
++							})}
++				</span>
++			</button>
++			<div className="passage-context-menu-divider" role="separator" />
++			<div className="passage-context-menu-title">
 +				{targets.length === 1
 +					? t('components.passageTagMenu.titleOne', {name: targets[0].name})
 +					: t('components.passageTagMenu.titleMany', {count: targets.length})}
 +			</div>
 +			{tags.length === 0 && (
-+				<div className="passage-tag-menu-empty">
++				<div className="passage-context-menu-empty">
 +					{t('components.passageTagMenu.noTags')}
 +				</div>
 +			)}
@@ -683,7 +1587,7 @@ index 0000000..4c1c4aa
 +				return (
 +					<button
 +						aria-checked={checked ? 'true' : some ? 'mixed' : 'false'}
-+						className="passage-tag-menu-item"
++						className="passage-context-menu-item"
 +						key={tag}
 +						onClick={() => toggle(tag)}
 +						role="menuitemcheckbox"
@@ -704,6 +1608,22 @@ index 0000000..4c1c4aa
 +		</div>
 +	);
 +};
+diff --git a/src/components/passage/passage-map/passage-map.tsx b/src/components/passage/passage-map/passage-map.tsx
+index da95d97..37dd0bf 100644
+--- a/src/components/passage/passage-map/passage-map.tsx
++++ b/src/components/passage/passage-map/passage-map.tsx
+@@ -17,7 +17,7 @@ export interface PassageMapProps {
+ 	passages: Passage[];
+ 	startPassageId: string;
+ 	tagColors: Story['tagColors'];
+-	tagDisplay: 'color' | 'name';
++	tagDisplay: 'color' | 'name' | 'outline';
+ 	visibleZoom: number;
+ 	zoom: number;
+ }
+diff --git a/src/components/passage/passage-tag-menu.tsx b/src/components/passage/passage-tag-menu.tsx
+deleted file mode 100644
+index e69de29..0000000
 diff --git a/src/components/passage/tag-outline.ts b/src/components/passage/tag-outline.ts
 new file mode 100644
 index 0000000..15b2182
@@ -794,6 +1714,105 @@ index 0000000..15b2182
 +
 +	return `conic-gradient(from 180deg, ${stops.join(', ')})`;
 +}
+diff --git a/src/dialogs/__tests__/saved-windows.test.ts b/src/dialogs/__tests__/saved-windows.test.ts
+new file mode 100644
+index 0000000..08a9abb
+--- /dev/null
++++ b/src/dialogs/__tests__/saved-windows.test.ts
+@@ -0,0 +1,93 @@
++import {PassageEditStack} from '../passage-edit';
++import {PassagePin} from '../passage-pin';
++import {StoryStylesheetDialog} from '../story-stylesheet';
++import {parseSavedWindows, snapshotWindows} from '../saved-windows';
++import {Dialog} from '../dialogs.types';
++
++function dialog(partial: Partial<Dialog>): Dialog {
++	return {
++		collapsed: false,
++		component: () => null,
++		highlighted: false,
++		maximized: false,
++		...partial
++	};
++}
++
++const story = {
++	id: 's1',
++	passages: [
++		{id: 'p1', name: 'CODE'},
++		{id: 'p2', name: 'Open1'},
++		{id: 'p3', name: 'Open2'}
++	]
++} as any;
++
++describe('snapshotWindows()', () => {
++	it("describes this story's windows in order, with passages by name", () => {
++		expect(
++			snapshotWindows(
++				[
++					dialog({
++						component: PassagePin,
++						props: {passageId: 'p1', storyId: 's1', width: 420}
++					}),
++					dialog({
++						collapsed: true,
++						component: PassageEditStack,
++						props: {passageIds: ['p2', 'p3'], storyId: 's1'}
++					}),
++					dialog({component: StoryStylesheetDialog, props: {storyId: 's1'}})
++				],
++				story
++			)
++		).toEqual([
++			{collapsed: undefined, passageName: 'CODE', type: 'pin', width: 420},
++			{collapsed: true, passageNames: ['Open1', 'Open2'], type: 'edit'},
++			{collapsed: undefined, type: 'stylesheet'}
++		]);
++	});
++
++	it('skips passages that no longer exist', () => {
++		expect(
++			snapshotWindows(
++				[
++					dialog({
++						component: PassagePin,
++						props: {passageId: 'gone', storyId: 's1'}
++					})
++				],
++				story
++			)
++		).toEqual([]);
++	});
++
++	it('ignores other stories and dialogs it does not know', () => {
++		expect(
++			snapshotWindows(
++				[
++					dialog({
++						component: PassagePin,
++						props: {passageId: 'p1', storyId: 'other'}
++					}),
++					dialog({props: {storyId: 's1'}}),
++					dialog({})
++				],
++				story
++			)
++		).toEqual([]);
++	});
++});
++
++describe('parseSavedWindows()', () => {
++	it('reads saved windows', () => {
++		expect(parseSavedWindows('{"s1":[{"type":"stylesheet"}]}')).toEqual({
++			s1: [{type: 'stylesheet'}]
++		});
++	});
++
++	it.each(['', 'nope', '[1]', 'null', '5'])(
++		'returns nothing for unusable value "%s"',
++		value => expect(parseSavedWindows(value)).toEqual({})
++	);
++});
 diff --git a/src/dialogs/about-twine/about-twine.css b/src/dialogs/about-twine/about-twine.css
 index c03455f..f81bd7f 100644
 --- a/src/dialogs/about-twine/about-twine.css
@@ -852,10 +1871,10 @@ index 6840b0f..343d344 100644
  				<p
  					dangerouslySetInnerHTML={{
 diff --git a/src/dialogs/app-prefs.css b/src/dialogs/app-prefs.css
-index c283632..8bb404b 100644
+index c283632..a44a663 100644
 --- a/src/dialogs/app-prefs.css
 +++ b/src/dialogs/app-prefs.css
-@@ -28,3 +28,26 @@
+@@ -28,3 +28,36 @@
  .app-prefs-dialog input[type='text'] {
  	width: 100%;
  }
@@ -882,16 +1901,50 @@ index c283632..8bb404b 100644
 +	margin: 0;
 +	opacity: 0.75;
 +}
++
++.app-prefs-dialog .quick-paste-pref input[type='text'] {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: var(--black);
++	font-family: var(--font-monospaced);
++	padding: calc(var(--grid-size) / 2);
++	width: 100%;
++}
 diff --git a/src/dialogs/app-prefs.tsx b/src/dialogs/app-prefs.tsx
-index a4576f6..495aa0e 100644
+index a4576f6..7f0d4db 100644
 --- a/src/dialogs/app-prefs.tsx
 +++ b/src/dialogs/app-prefs.tsx
-@@ -70,11 +70,38 @@ export const AppPrefsDialog: React.FC<
+@@ -61,7 +61,18 @@ export const AppPrefsDialog: React.FC<
+ 					options={[
+ 						{label: t('dialogs.appPrefs.dialogWidths.default'), value: '600'},
+ 						{label: t('dialogs.appPrefs.dialogWidths.wider'), value: '700'},
+-						{label: t('dialogs.appPrefs.dialogWidths.widest'), value: '800'}
++						{label: t('dialogs.appPrefs.dialogWidths.widest'), value: '800'},
++						// A width set by dragging the edge of the window.
++						...(![600, 700, 800].includes(prefs.dialogWidth)
++							? [
++									{
++										label: t('dialogs.appPrefs.dialogWidths.custom', {
++											width: prefs.dialogWidth
++										}),
++										value: prefs.dialogWidth.toString()
++									}
++								]
++							: [])
+ 					]}
+ 					value={prefs.dialogWidth.toString()}
+ 				>
+@@ -70,11 +81,49 @@ export const AppPrefsDialog: React.FC<
  				<TextSelect
  					onChange={e => dispatch(setPref('passageTagDisplay', e.target.value))}
  					options={[
 -						{label: t('dialogs.appPrefs.passageTagDisplays.color'), value: 'color'},
 -						{label: t('dialogs.appPrefs.passageTagDisplays.name'), value: 'name'}
++						{
++							label: t('dialogs.appPrefs.passageTagDisplays.outline'),
++							value: 'outline'
++						},
 +						{
 +							label: t('dialogs.appPrefs.passageTagDisplays.color'),
 +							value: 'color'
@@ -906,12 +1959,19 @@ index a4576f6..495aa0e 100644
 +				>
 +					{t('dialogs.appPrefs.passageTagDisplay')}
 +				</TextSelect>
-+				<CheckboxButton
-+					disabled={prefs.passageTagDisplay !== 'color'}
-+					label={t('dialogs.appPrefs.passageTagOutlines')}
-+					onChange={value => dispatch(setPref('passageTagOutlines', value))}
-+					value={prefs.passageTagOutlines}
-+				/>
++				<div className="quick-paste-pref">
++					<label htmlFor="link-template">
++						{t('dialogs.appPrefs.linkTemplate')}
++					</label>
++					<input
++						id="link-template"
++						onChange={e => dispatch(setPref('linkTemplate', e.target.value))}
++						spellCheck={false}
++						type="text"
++						value={prefs.linkTemplate}
++					/>
++					<p>{t('dialogs.appPrefs.linkTemplateHelp')}</p>
++				</div>
 +				<div className="quick-paste-pref">
 +					<label htmlFor="quick-paste-text">
 +						{t('dialogs.appPrefs.quickPasteText')}
@@ -929,7 +1989,7 @@ index a4576f6..495aa0e 100644
  					disabled={!prefs.useCodeMirror}
  					label={t('dialogs.appPrefs.editorCursorBlinks')}
 diff --git a/src/dialogs/context/action-creators.ts b/src/dialogs/context/action-creators.ts
-index 3b47417..7e8c83f 100644
+index 3b47417..02b78f4 100644
 --- a/src/dialogs/context/action-creators.ts
 +++ b/src/dialogs/context/action-creators.ts
 @@ -1,6 +1,7 @@
@@ -940,7 +2000,7 @@ index 3b47417..7e8c83f 100644
  
  /**
   * Adds a passage editor dialog, either creating a new stack for it or adding it
-@@ -96,3 +97,21 @@ export function removePassageEditors(
+@@ -96,3 +97,31 @@ export function removePassageEditors(
  		}
  	};
  }
@@ -953,20 +2013,74 @@ index 3b47417..7e8c83f 100644
 +	storyId: string,
 +	passageId: string
 +): Thunk<DialogsState, DialogsAction> {
-+	return dispatch => {
-+		dispatch({
-+			type: 'addDialog',
-+			component: PassagePin,
-+			props: {storyId, passageId}
-+		});
++	return (dispatch, getState) => {
++		// If this passage is already pinned, leave that pin alone.
++
++		const alreadyPinned = getState().some(
++			dialog =>
++				dialog.component === PassagePin && dialog.props?.passageId === passageId
++		);
++
++		if (!alreadyPinned) {
++			dispatch({
++				type: 'addDialog',
++				component: PassagePin,
++				props: {storyId, passageId}
++			});
++		}
++
 +		dispatch(removePassageEditors([passageId]));
 +	};
 +}
 diff --git a/src/dialogs/context/dialogs.css b/src/dialogs/context/dialogs.css
-index 1ee9feb..4a5de56 100644
+index 1ee9feb..abc0c8e 100644
 --- a/src/dialogs/context/dialogs.css
 +++ b/src/dialogs/context/dialogs.css
-@@ -45,4 +45,28 @@
+@@ -1,35 +1,24 @@
+ @import '../../styles/animations.css';
+ @import '../../styles/metrics.css';
+ 
+-.dialogs {
+-	bottom: var(--grid-size);
+-	left: var(--grid-size);
+-	pointer-events: none;
+-	position: fixed;
+-	right: var(--grid-size);
+-	top: calc(
+-		2 * var(--control-height) + var(--grid-size)
+-	); /* below <top-bar> height */
+-}
++/* The main column of windows, flush with the right edge and the bottom of the
++   screen, just under the toolbar. */
+ 
+ .dialogs {
+ 	align-items: flex-end;
+-	bottom: var(--grid-size);
++	bottom: 0;
+ 	display: flex;
+ 	flex-direction: column;
+-	grid-gap: var(--grid-size);
+ 	justify-content: flex-end;
++	left: 0;
+ 	pointer-events: none;
+ 	position: fixed;
+-	right: var(--grid-size);
+-	top: calc(
+-		2 * var(--control-height) + var(--grid-size)
+-	); /* below <top-bar> height */
+-	left: var(--grid-size);
+-	bottom: var(--grid-size);
++	right: 0;
++	top: calc(2 * var(--control-height)); /* below <top-bar> height */
+ }
+ 
+-.dialogs .dialog-card, .dialogs .background-dialog-card {
++.dialogs .dialog-card,
++.dialogs .background-dialog-card {
+ 	flex: 1;
+ 	pointer-events: auto;
+ }
+@@ -45,4 +34,84 @@
  	left: 0;
  	right: 0;
  	bottom: 0;
@@ -974,48 +2088,200 @@ index 1ee9feb..4a5de56 100644
 \ No newline at end of file
 +}
 +
-+/* Pinned passages: a second column to the left of the main dialogs. */
++/* Pinned passages: each is its own column, to the left of the main windows.
++   The first pin sits next to the main column and later ones go further left. */
 +
 +.dialogs-pinned {
-+	align-items: stretch;
-+	bottom: var(--grid-size);
++	bottom: 0;
 +	display: flex;
-+	flex-direction: column;
-+	grid-gap: var(--grid-size);
-+	justify-content: flex-end;
++	flex-direction: row-reverse;
 +	pointer-events: none;
 +	position: fixed;
-+	top: calc(2 * var(--control-height) + var(--grid-size));
++	top: calc(2 * var(--control-height));
 +}
 +
-+.dialogs-pinned .dialog-card {
++.dialogs-pinned-column {
++	display: flex;
++	flex: 0 1 auto;
++	flex-direction: column;
++	min-width: 240px;
++	pointer-events: none;
++	position: relative;
++}
++
++.dialogs-pinned-column .dialog-card {
 +	flex: 1;
 +	min-height: 0;
 +	pointer-events: auto;
 +}
 +
-+.dialogs-pinned .dialog-card.collapsed {
++.dialogs-pinned-column .dialog-card.collapsed {
 +	flex: 0;
 +}
++
++/* Windows sit edge to edge, with no gaps or rounded corners. */
++
++.dialogs .dialog-card .card,
++.dialogs-pinned .dialog-card .card {
++	border-radius: 0;
++	box-shadow: none;
++}
++
++.dialogs .dialog-card .card,
++.dialogs-pinned .dialog-card .card {
++	border-left: 1px solid var(--gray);
++	border-top: 1px solid var(--gray);
++}
++
++/* Grab strip along the left edge of a column, which lights up on hover. */
++
++.dialog-resize-handle {
++	bottom: 0;
++	cursor: ew-resize;
++	left: -4px;
++	pointer-events: auto;
++	position: absolute;
++	top: 0;
++	width: 9px;
++	z-index: 20;
++}
++
++.dialog-resize-handle::after {
++	background: transparent;
++	bottom: 0;
++	content: '';
++	left: 3px;
++	position: absolute;
++	top: 0;
++	transition: background 0.1s;
++	width: 3px;
++}
++
++.dialog-resize-handle:hover::after,
++body.resizing-columns .dialog-resize-handle::after {
++	background: var(--blue);
++}
++
++body.resizing-columns,
++body.resizing-columns * {
++	cursor: ew-resize !important;
++	user-select: none !important;
++}
 diff --git a/src/dialogs/context/dialogs.tsx b/src/dialogs/context/dialogs.tsx
-index 17b2fad..9e6f01c 100644
+index 17b2fad..a34bf92 100644
 --- a/src/dialogs/context/dialogs.tsx
 +++ b/src/dialogs/context/dialogs.tsx
-@@ -3,6 +3,7 @@ import {useScrollbarSize} from 'react-scrollbar-size';
+@@ -2,7 +2,8 @@ import * as React from 'react';
+ import {useScrollbarSize} from 'react-scrollbar-size';
  import {CSSTransition, TransitionGroup} from 'react-transition-group';
  import {useDialogsContext} from '.';
- import {usePrefsContext} from '../../store/prefs';
+-import {usePrefsContext} from '../../store/prefs';
++import {setPref, usePrefsContext} from '../../store/prefs';
 +import {PassagePin} from '../passage-pin/passage-pin';
  import './dialogs.css';
  
  // TODO move this to separate module to avoid circular dep
-@@ -17,50 +18,83 @@ export const Dialogs: React.FC = () => {
- 	const {prefs} = usePrefsContext();
+@@ -12,55 +13,216 @@ const DialogTransition: React.FC = props => (
+ 	</CSSTransition>
+ );
+ 
++const minColumnWidth = 280;
++const defaultPinnedWidth = 500;
++
++interface ResizeHandleProps {
++	className?: string;
++	onChange: (width: number) => void;
++	onCommit: (width: number) => void;
++	style?: React.CSSProperties;
++	width: number;
++}
++
++/**
++ * A strip along the left edge of a column of windows. Dragging it left makes
++ * the column wider, and right makes it narrower.
++ */
++const ResizeHandle: React.FC<ResizeHandleProps> = ({
++	className,
++	onChange,
++	onCommit,
++	style,
++	width
++}) => {
++	function handleMouseDown(event: React.MouseEvent) {
++		if (event.button !== 0) {
++			return;
++		}
++
++		event.preventDefault();
++		event.stopPropagation();
++
++		const startX = event.clientX;
++		let latest = width;
++
++		document.body.classList.add('resizing-columns');
++
++		function handleMove(moveEvent: MouseEvent) {
++			latest = Math.round(
++				Math.max(
++					minColumnWidth,
++					Math.min(window.innerWidth * 0.9, width + startX - moveEvent.clientX)
++				)
++			);
++			onChange(latest);
++		}
++
++		function handleUp() {
++			window.removeEventListener('mousemove', handleMove);
++			window.removeEventListener('mouseup', handleUp);
++			document.body.classList.remove('resizing-columns');
++			onCommit(latest);
++		}
++
++		window.addEventListener('mousemove', handleMove);
++		window.addEventListener('mouseup', handleUp);
++	}
++
++	return (
++		<div
++			aria-orientation="vertical"
++			className={`dialog-resize-handle ${className ?? ''}`}
++			onMouseDown={handleMouseDown}
++			role="separator"
++			style={style}
++		/>
++	);
++};
++
+ export const Dialogs: React.FC = () => {
+ 	const {height, width} = useScrollbarSize();
+-	const {prefs} = usePrefsContext();
++	const {dispatch: prefsDispatch, prefs} = usePrefsContext();
  	const {dispatch, dialogs} = useDialogsContext();
  
 -	const hasUnmaximized = dialogs.some(dialog => !dialog.maximized);
-+	// Pinned passages get their own column to the left of the main one. We keep
-+	// each dialog's original index because the actions below refer to it.
++	// Widths while a column's edge is being dragged. They're only saved when the
++	// mouse is let go.
++
++	const [liveWidths, setLiveWidths] = React.useState<Record<string, number>>(
++		{}
++	);
++
++	function setLiveWidth(key: string, value?: number) {
++		setLiveWidths(current => {
++			const next = {...current};
++
++			if (value === undefined) {
++				delete next[key];
++			} else {
++				next[key] = value;
++			}
++
++			return next;
++		});
++	}
++
++	// Pinned passages each get their own column, to the left of the main one. We
++	// keep each dialog's original index because the actions below refer to it.
 +
 +	const indexed = dialogs.map((dialog, index) => ({dialog, index}));
 +	const mainDialogs = indexed.filter(
@@ -1027,43 +2293,28 @@ index 17b2fad..9e6f01c 100644
 +
 +	const hasMain = mainDialogs.length > 0;
 +	const hasUnmaximized = mainDialogs.some(({dialog}) => !dialog.maximized);
++	const hasMaximized = mainDialogs.some(({dialog}) => dialog.maximized);
++	const mainWidth = liveWidths.main ?? prefs.dialogWidth;
  	const containerStyle: React.CSSProperties = {
- 		paddingLeft: `calc(100% - (${prefs.dialogWidth}px + 2 * (var(--grid-size))))`,
+-		paddingLeft: `calc(100% - (${prefs.dialogWidth}px + 2 * (var(--grid-size))))`,
++		// 100% here is the width of the whole screen, so leave room for the map's
++		// scrollbar as well.
++		paddingLeft: `calc(100% - ${mainWidth + width}px)`,
  		marginBottom: height,
  		marginRight: width
  	};
 +	const pinnedStyle: React.CSSProperties = {
 +		marginBottom: height,
-+		right: hasMain
-+			? `calc(${prefs.dialogWidth}px + 2 * var(--grid-size) + ${width}px)`
-+			: `calc(var(--grid-size) + ${width}px)`,
-+		width: `${prefs.dialogWidth}px`
++		right: (hasMain ? mainWidth : 0) + width
 +	};
  	const maximizedStyle: React.CSSProperties = {
- 		marginRight: hasUnmaximized
- 			? `calc(${prefs.dialogWidth}px + var(--grid-size))`
- 			: 0
+-		marginRight: hasUnmaximized
+-			? `calc(${prefs.dialogWidth}px + var(--grid-size))`
+-			: 0
++		marginRight: hasUnmaximized ? mainWidth : 0
  	};
  
--	return (
--		<div className="dialogs" style={containerStyle}>
--			<TransitionGroup component={null}>
--				{dialogs.map((dialog, index) => {
--					const managementProps = {
--						collapsed: dialog.collapsed,
--						highlighted: dialog.highlighted,
--						maximized: dialog.maximized,
--						onChangeCollapsed: (collapsed: boolean) =>
--							dispatch({type: 'setDialogCollapsed', collapsed, index}),
--						onChangeHighlighted: (highlighted: boolean) =>
--							dispatch({type: 'setDialogHighlighted', highlighted, index}),
--						onChangeMaximized: (maximized: boolean) =>
--							dispatch({type: 'setDialogMaximized', maximized, index}),
--						onChangeProps: (props: Record<string, any>) =>
--							dispatch({type: 'setDialogProps', index, props}),
--						onClose: () => dispatch({type: 'removeDialog', index})
--					};
-+	function renderDialog(
++	function renderContent(
 +		{dialog, index}: {dialog: (typeof dialogs)[number]; index: number},
 +		maximizable: boolean
 +	) {
@@ -1081,7 +2332,35 @@ index 17b2fad..9e6f01c 100644
 +				dispatch({type: 'setDialogProps', index, props}),
 +			onClose: () => dispatch({type: 'removeDialog', index})
 +		};
- 
++
++		return maximizable && dialog.maximized ? (
++			<div className="maximized" style={maximizedStyle}>
++				<dialog.component {...dialog.props} {...managementProps} />
++			</div>
++		) : (
++			<dialog.component {...dialog.props} {...managementProps} />
++		);
++	}
++
+ 	return (
+-		<div className="dialogs" style={containerStyle}>
+-			<TransitionGroup component={null}>
+-				{dialogs.map((dialog, index) => {
+-					const managementProps = {
+-						collapsed: dialog.collapsed,
+-						highlighted: dialog.highlighted,
+-						maximized: dialog.maximized,
+-						onChangeCollapsed: (collapsed: boolean) =>
+-							dispatch({type: 'setDialogCollapsed', collapsed, index}),
+-						onChangeHighlighted: (highlighted: boolean) =>
+-							dispatch({type: 'setDialogHighlighted', highlighted, index}),
+-						onChangeMaximized: (maximized: boolean) =>
+-							dispatch({type: 'setDialogMaximized', maximized, index}),
+-						onChangeProps: (props: Record<string, any>) =>
+-							dispatch({type: 'setDialogProps', index, props}),
+-						onClose: () => dispatch({type: 'removeDialog', index})
+-					};
+-
 -					return (
 -						<DialogTransition key={index}>
 -							{dialog.maximized ? (
@@ -1091,50 +2370,81 @@ index 17b2fad..9e6f01c 100644
 -							) : (
 -								<dialog.component {...dialog.props} {...managementProps} />
 -							)}
--						</DialogTransition>
--					);
--				})}
--			</TransitionGroup>
--		</div>
-+		return (
-+			<DialogTransition key={index}>
-+				{maximizable && dialog.maximized ? (
-+					<div className="maximized" style={maximizedStyle}>
-+						<dialog.component {...dialog.props} {...managementProps} />
-+					</div>
-+				) : (
-+					<dialog.component {...dialog.props} {...managementProps} />
-+				)}
-+			</DialogTransition>
-+		);
-+	}
-+
-+	return (
 +		<>
 +			{pinnedDialogs.length > 0 && (
 +				<div className="dialogs-pinned" style={pinnedStyle}>
 +					<TransitionGroup component={null}>
-+						{pinnedDialogs.map(item => renderDialog(item, false))}
++						{pinnedDialogs.map(item => {
++							const key = `pin-${item.index}`;
++							const columnWidth: number =
++								liveWidths[key] ??
++								item.dialog.props?.width ??
++								defaultPinnedWidth;
++
++							return (
++								<DialogTransition key={item.index}>
++									<div
++										className="dialogs-pinned-column"
++										style={{width: columnWidth}}
++									>
++										<ResizeHandle
++											onChange={value => setLiveWidth(key, value)}
++											onCommit={value => {
++												setLiveWidth(key);
++												dispatch({
++													type: 'setDialogProps',
++													index: item.index,
++													props: {...item.dialog.props, width: value}
++												});
++											}}
++											width={columnWidth}
++										/>
++										{renderContent(item, false)}
++									</div>
++								</DialogTransition>
++							);
++						})}
 +					</TransitionGroup>
 +				</div>
 +			)}
 +			<div className="dialogs" style={containerStyle}>
++				{hasMain && !hasMaximized && (
++					<ResizeHandle
++						className="dialogs-main-handle"
++						onChange={value => setLiveWidth('main', value)}
++						onCommit={value => {
++							setLiveWidth('main');
++							prefsDispatch(setPref('dialogWidth', value));
++						}}
++						style={{left: `calc(100% - ${mainWidth}px)`}}
++						width={mainWidth}
++					/>
++				)}
 +				<TransitionGroup component={null}>
-+					{mainDialogs.map(item => renderDialog(item, true))}
++					{mainDialogs.map(item => (
++						<DialogTransition key={item.index}>
++							{renderContent(item, true)}
+ 						</DialogTransition>
+-					);
+-				})}
+-			</TransitionGroup>
+-		</div>
++					))}
 +				</TransitionGroup>
 +			</div>
 +		</>
  	);
  };
 diff --git a/src/dialogs/index.ts b/src/dialogs/index.ts
-index 13f1b48..73fa24f 100644
+index 13f1b48..441b663 100644
 --- a/src/dialogs/index.ts
 +++ b/src/dialogs/index.ts
-@@ -5,6 +5,7 @@ export * from './context';
+@@ -5,6 +5,8 @@ export * from './context';
  export * from './context/dialogs';
  export * from './dialogs.types';
  export * from './passage-edit';
 +export * from './passage-pin';
++export * from './saved-windows';
  export * from './passage-tags';
  export * from './story-import';
  export * from './story-javascript';
@@ -1193,12 +2503,17 @@ index 36ecd9d..6a27758 100644
  					);
  				})}
 diff --git a/src/dialogs/passage-edit/passage-toolbar.tsx b/src/dialogs/passage-edit/passage-toolbar.tsx
-index 37bc7b1..57701f7 100644
+index 37bc7b1..133369b 100644
 --- a/src/dialogs/passage-edit/passage-toolbar.tsx
 +++ b/src/dialogs/passage-edit/passage-toolbar.tsx
-@@ -1,9 +1,10 @@
+@@ -1,9 +1,15 @@
 -import {IconResize} from '@tabler/icons';
-+import {IconClipboardText, IconPin, IconResize} from '@tabler/icons';
++import {
++	IconBrackets,
++	IconClipboardText,
++	IconPin,
++	IconResize
++} from '@tabler/icons';
  import {Editor} from 'codemirror';
  import * as React from 'react';
  import {useTranslation} from 'react-i18next';
@@ -1208,11 +2523,12 @@ index 37bc7b1..57701f7 100644
  import {MenuButton} from '../../components/control/menu-button';
  import {RenamePassageButton} from '../../components/passage/rename-passage-button';
  import {TestPassageButton} from '../../routes/story-edit/toolbar/passage/test-passage-button';
-@@ -17,20 +18,23 @@ import {
+@@ -17,20 +23,24 @@ import {
  	updatePassage
  } from '../../store/stories';
  import {useUndoableStoriesContext} from '../../store/undoable-stories';
 +import {usePrefsContext} from '../../store/prefs';
++import {linesToArray} from '../../util/lines-to-array';
  import {Color} from '../../util/color';
  import {TagCardButton} from '../../components/tag/tag-card-button';
  
@@ -1233,7 +2549,7 @@ index 37bc7b1..57701f7 100644
  	const {t} = useTranslation();
  	const passageTags = storyPassageTags(story);
  
-@@ -55,6 +59,55 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
+@@ -55,6 +65,72 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
  		dispatch(updatePassage(story, passage, {name}, {dontUpdateOthers: true}));
  	}
  
@@ -1286,13 +2602,38 @@ index 37bc7b1..57701f7 100644
 +		window.setTimeout(placeCursor, 0);
 +	}
 +
++	function handleArray() {
++		if (!editor) {
++			return;
++		}
++
++		// Keep the selected lines and add the array on a new line below them.
++
++		const selection = editor.getSelection();
++
++		if (selection.trim() === '') {
++			return;
++		}
++
++		editor.replaceSelection(`${selection}\n${linesToArray(selection)}`, 'end');
++		editor.focus();
++	}
++
  	function handleSetSize({height, width}: {height: number; width: number}) {
  		dispatch(updatePassage(story, passage, {height, width}));
  	}
-@@ -115,6 +168,26 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
+@@ -115,6 +191,34 @@ export const PassageToolbar: React.FC<PassageToolbarProps> = props => {
  				story={story}
  			/>
  			<TestPassageButton passage={passage} story={story} />
++			{useCodeMirror && (
++				<IconButton
++					disabled={disabled || !editor}
++					icon={<IconBrackets />}
++					label={t('dialogs.passageEdit.array')}
++					onClick={handleArray}
++				/>
++			)}
 +			{useCodeMirror && (
 +				<IconButton
 +					disabled={disabled || !editor || !prefs.quickPasteText}
@@ -1420,6 +2761,248 @@ index 0000000..2cdef9e
 +		</DialogCard>
 +	);
 +};
+diff --git a/src/dialogs/saved-windows.ts b/src/dialogs/saved-windows.ts
+new file mode 100644
+index 0000000..745f01f
+--- /dev/null
++++ b/src/dialogs/saved-windows.ts
+@@ -0,0 +1,236 @@
++import * as React from 'react';
++import {Thunk} from 'react-hook-thunk-reducer';
++import {setPref, usePrefsContext} from '../store/prefs';
++import {Story} from '../store/stories';
++import {useDialogsContext} from './context';
++import {addPassageEditors} from './context/action-creators';
++import {DialogsAction, DialogsState} from './dialogs.types';
++import {PassageEditStack} from './passage-edit';
++import {PassagePin} from './passage-pin';
++import {PassageTagsDialog} from './passage-tags';
++import {StoryDetailsDialog} from './story-details';
++import {StoryJavaScriptDialog} from './story-javascript';
++import {StoryStylesheetDialog} from './story-stylesheet';
++
++/**
++ * A window that gets reopened the next time a story is opened.
++ */
++export type SavedWindow =
++	| {collapsed?: boolean; passageNames: string[]; type: 'edit'}
++	| {collapsed?: boolean; passageName: string; type: 'pin'; width?: number}
++	| {
++			collapsed?: boolean;
++			type: 'details' | 'javascript' | 'passageTags' | 'stylesheet';
++	  };
++
++const storyDialogs = [
++	{component: StoryStylesheetDialog, type: 'stylesheet'},
++	{component: StoryJavaScriptDialog, type: 'javascript'},
++	{component: StoryDetailsDialog, type: 'details'},
++	{component: PassageTagsDialog, type: 'passageTags'}
++] as const;
++
++/**
++ * Describes the open windows that belong to a story, in order.
++ *
++ * Passages are saved by name. The desktop app gives every story and passage a
++ * new internal ID each time it loads them from disk, so IDs can't be used to
++ * find them again after the app is restarted.
++ */
++export function snapshotWindows(
++	dialogs: DialogsState,
++	story: Pick<Story, 'id' | 'passages'>
++): SavedWindow[] {
++	const saved: SavedWindow[] = [];
++	const nameOf = (id: unknown) =>
++		story.passages.find(passage => passage.id === id)?.name;
++
++	for (const dialog of dialogs) {
++		if (dialog.props?.storyId !== story.id) {
++			continue;
++		}
++
++		const collapsed = dialog.collapsed || undefined;
++
++		if (dialog.component === PassageEditStack) {
++			const passageNames = (dialog.props.passageIds as string[])
++				.map(nameOf)
++				.filter((name): name is string => name !== undefined);
++
++			if (passageNames.length > 0) {
++				saved.push({collapsed, passageNames, type: 'edit'});
++			}
++		} else if (dialog.component === PassagePin) {
++			const passageName = nameOf(dialog.props.passageId);
++
++			if (passageName !== undefined) {
++				saved.push({
++					collapsed,
++					passageName,
++					type: 'pin',
++					width: dialog.props.width
++				});
++			}
++		} else {
++			const match = storyDialogs.find(
++				({component}) => component === dialog.component
++			);
++
++			if (match) {
++				saved.push({collapsed, type: match.type});
++			}
++		}
++	}
++
++	return saved;
++}
++
++/**
++ * Reads the saved windows preference, ignoring anything that isn't usable.
++ */
++export function parseSavedWindows(json: string): Record<string, SavedWindow[]> {
++	try {
++		const parsed = JSON.parse(json);
++
++		if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
++			return parsed;
++		}
++	} catch {
++		// Fall through.
++	}
++
++	return {};
++}
++
++/**
++ * Reopens saved windows for a story, skipping passages that no longer exist.
++ */
++export function restoreWindows(
++	story: Story,
++	windows: SavedWindow[]
++): Thunk<DialogsState, DialogsAction> {
++	const idOf = (name: unknown) =>
++		typeof name === 'string'
++			? story.passages.find(passage => passage.name === name)?.id
++			: undefined;
++
++	return (dispatch, getState) => {
++		for (const saved of windows) {
++			let index = -1;
++
++			if (saved.type === 'edit') {
++				const passageIds = (saved.passageNames ?? [])
++					.map(idOf)
++					.filter((id): id is string => id !== undefined);
++
++				if (passageIds.length > 0) {
++					dispatch(addPassageEditors(story.id, passageIds));
++					index = getState().findIndex(
++						dialog => dialog.component === PassageEditStack
++					);
++				}
++			} else if (saved.type === 'pin') {
++				const passageId = idOf(saved.passageName);
++
++				if (passageId) {
++					dispatch({
++						type: 'addDialog',
++						component: PassagePin,
++						props: {
++							passageId,
++							storyId: story.id,
++							...(typeof saved.width === 'number' ? {width: saved.width} : {})
++						}
++					});
++					index = getState().length - 1;
++				}
++			} else {
++				const match = storyDialogs.find(({type}) => type === saved.type);
++
++				if (match) {
++					dispatch({
++						type: 'addDialog',
++						component: match.component,
++						props: {storyId: story.id}
++					});
++					index = getState().length - 1;
++				}
++			}
++
++			if (index !== -1 && saved.collapsed) {
++				dispatch({type: 'setDialogCollapsed', collapsed: true, index});
++			}
++		}
++	};
++}
++
++/**
++ * Remembers which windows are open for a story, and reopens them the next time
++ * the story is opened.
++ */
++export function useSavedWindows(story: Story) {
++	const {dispatch: prefsDispatch, prefs} = usePrefsContext();
++	const {dispatch, dialogs} = useDialogsContext();
++	const ready = React.useRef(false);
++	const latest = React.useRef({dialogs, prefs, story});
++
++	latest.current = {dialogs, prefs, story};
++
++	const save = React.useCallback(() => {
++		const {
++			dialogs: currentDialogs,
++			prefs: currentPrefs,
++			story: s
++		} = latest.current;
++		const all = parseSavedWindows(currentPrefs.savedWindows);
++		const snapshot = snapshotWindows(currentDialogs, s);
++
++		// A story's IFID is the one thing that identifies it from one session of
++		// the app to the next.
++
++		if (snapshot.length > 0) {
++			all[s.ifid] = snapshot;
++		} else {
++			delete all[s.ifid];
++		}
++
++		const json = JSON.stringify(all);
++
++		if (json !== currentPrefs.savedWindows) {
++			prefsDispatch(setPref('savedWindows', json));
++		}
++	}, [prefsDispatch]);
++
++	// Reopen what was open last time.
++
++	React.useEffect(() => {
++		const saved = parseSavedWindows(latest.current.prefs.savedWindows)[
++			latest.current.story.ifid
++		];
++
++		if (saved && saved.length > 0) {
++			dispatch(restoreWindows(latest.current.story, saved));
++		}
++
++		ready.current = true;
++		// This only runs once, when the story is opened.
++	}, []);
++
++	// Save a moment after the windows change, and again on the way out. The
++	// windows are saved by passage name, so a passage being renamed counts as a
++	// change too.
++
++	const snapshot = JSON.stringify(snapshotWindows(dialogs, story));
++
++	React.useEffect(() => {
++		if (!ready.current) {
++			return;
++		}
++
++		const timer = window.setTimeout(save, 500);
++
++		return () => window.clearTimeout(timer);
++	}, [save, snapshot]);
++
++	React.useEffect(() => save, [save]);
++}
 diff --git a/src/electron/main-process/__tests__/about-dialog.test.ts b/src/electron/main-process/__tests__/about-dialog.test.ts
 new file mode 100644
 index 0000000..c89c615
@@ -1448,10 +3031,10 @@ index 0000000..c89c615
 +	});
 +});
 diff --git a/src/electron/main-process/__tests__/check-for-update.test.ts b/src/electron/main-process/__tests__/check-for-update.test.ts
-index 2b897d7..25cdea1 100644
+index 2b897d7..9c14c64 100644
 --- a/src/electron/main-process/__tests__/check-for-update.test.ts
 +++ b/src/electron/main-process/__tests__/check-for-update.test.ts
-@@ -12,8 +12,40 @@ describe('checkForUpdate()', () => {
+@@ -12,8 +12,41 @@ describe('checkForUpdate()', () => {
  	const showErrorBoxMock = dialog.showErrorBox as jest.Mock;
  	const showMessageBoxMock = dialog.showMessageBox as jest.Mock;
  
@@ -1464,7 +3047,7 @@ index 2b897d7..25cdea1 100644
 +
 +		// The first dialog is always the "this will remove the mod" warning.
 +
-+		showMessageBoxMock.mockResolvedValueOnce({response: 0});
++		showMessageBoxMock.mockResolvedValueOnce({response: 1});
 +	});
 +
 +	it('warns that updating will remove the mod before checking', async () => {
@@ -1474,8 +3057,9 @@ index 2b897d7..25cdea1 100644
 +		await checkForUpdate();
 +		expect(showMessageBoxMock.mock.calls[0]).toEqual([
 +			expect.objectContaining({
-+				buttons: ['electron.updateCheck.modWarningContinue', 'common.cancel'],
-+				defaultId: 1,
++				buttons: ['common.cancel', 'electron.updateCheck.modWarningContinue'],
++				cancelId: 0,
++				defaultId: 0,
 +				detail: 'electron.updateCheck.modWarningDetail',
 +				message: 'electron.updateCheck.modWarning',
 +				type: 'warning'
@@ -1485,14 +3069,14 @@ index 2b897d7..25cdea1 100644
 +
 +	it("doesn't check for updates if the user cancels the warning", async () => {
 +		showMessageBoxMock.mockReset();
-+		showMessageBoxMock.mockResolvedValueOnce({response: 1});
++		showMessageBoxMock.mockResolvedValueOnce({response: 0});
 +		await checkForUpdate();
 +		expect(nodeFetchMock).not.toHaveBeenCalled();
 +		expect(showMessageBoxMock).toHaveBeenCalledTimes(1);
  	});
  
  	describe('if the newest version is older than the current one', () => {
-@@ -26,6 +58,7 @@ describe('checkForUpdate()', () => {
+@@ -26,6 +59,7 @@ describe('checkForUpdate()', () => {
  		it('shows a dialog saying that the user has the most current version', async () => {
  			await checkForUpdate();
  			expect(showMessageBoxMock.mock.calls).toEqual([
@@ -1500,7 +3084,7 @@ index 2b897d7..25cdea1 100644
  				[expect.objectContaining({message: 'electron.updateCheck.upToDate'})]
  			]);
  		});
-@@ -41,6 +74,7 @@ describe('checkForUpdate()', () => {
+@@ -41,6 +75,7 @@ describe('checkForUpdate()', () => {
  		it('shows a dialog saying that the user has the most current version', async () => {
  			await checkForUpdate();
  			expect(showMessageBoxMock.mock.calls).toEqual([
@@ -1508,7 +3092,7 @@ index 2b897d7..25cdea1 100644
  				[expect.objectContaining({message: 'electron.updateCheck.upToDate'})]
  			]);
  		});
-@@ -56,6 +90,7 @@ describe('checkForUpdate()', () => {
+@@ -56,6 +91,7 @@ describe('checkForUpdate()', () => {
  		it('shows a dialog saying a newer version is available', async () => {
  			await checkForUpdate();
  			expect(showMessageBoxMock.mock.calls).toEqual([
@@ -1572,7 +3156,7 @@ index 0000000..b0cda51
 +	});
 +}
 diff --git a/src/electron/main-process/check-for-update.ts b/src/electron/main-process/check-for-update.ts
-index eaef0e8..dfc4e20 100644
+index eaef0e8..5485471 100644
 --- a/src/electron/main-process/check-for-update.ts
 +++ b/src/electron/main-process/check-for-update.ts
 @@ -22,6 +22,25 @@ interface VersionResponse {
@@ -1584,17 +3168,17 @@ index eaef0e8..dfc4e20 100644
 +
 +	const {response: proceed} = await dialog.showMessageBox({
 +		buttons: [
-+			i18n.t('electron.updateCheck.modWarningContinue'),
-+			i18n.t('common.cancel')
++			i18n.t('common.cancel'),
++			i18n.t('electron.updateCheck.modWarningContinue')
 +		],
-+		cancelId: 1,
-+		defaultId: 1,
++		cancelId: 0,
++		defaultId: 0,
 +		detail: i18n.t('electron.updateCheck.modWarningDetail'),
 +		message: i18n.t('electron.updateCheck.modWarning'),
 +		type: 'warning'
 +	});
 +
-+	if (proceed !== 0) {
++	if (proceed !== 1) {
 +		return;
 +	}
 +
@@ -1692,15 +3276,127 @@ index 4ca2585..4ce6830 100644
  		</ButtonBar>
  	);
  };
+diff --git a/src/routes/story-edit/__tests__/use-zoom-shortcuts.test.tsx b/src/routes/story-edit/__tests__/use-zoom-shortcuts.test.tsx
+index c055af9..f9405bd 100644
+--- a/src/routes/story-edit/__tests__/use-zoom-shortcuts.test.tsx
++++ b/src/routes/story-edit/__tests__/use-zoom-shortcuts.test.tsx
+@@ -34,7 +34,7 @@ describe('useZoomShortcuts()', () => {
+ 				charCode: 187
+ 			});
+ 			expect(screen.getByTestId('story-inspector-default').dataset.zoom).toBe(
+-				'0.6'
++				'0.4'
+ 			);
+ 			cleanup();
+ 			story.zoom = 0.6;
+@@ -46,7 +46,7 @@ describe('useZoomShortcuts()', () => {
+ 				charCode: 187
+ 			});
+ 			expect(screen.getByTestId('story-inspector-default').dataset.zoom).toBe(
+-				'1'
++				'0.7'
+ 			);
+ 		});
+ 
+@@ -80,7 +80,7 @@ describe('useZoomShortcuts()', () => {
+ 				charCode: 189
+ 			});
+ 			expect(screen.getByTestId('story-inspector-default').dataset.zoom).toBe(
+-				'0.6'
++				'0.9'
+ 			);
+ 			cleanup();
+ 			story.zoom = 0.6;
+@@ -92,7 +92,7 @@ describe('useZoomShortcuts()', () => {
+ 				charCode: 189
+ 			});
+ 			expect(screen.getByTestId('story-inspector-default').dataset.zoom).toBe(
+-				'0.3'
++				'0.5'
+ 			);
+ 		});
+ 
+diff --git a/src/routes/story-edit/__tests__/zoom-and-resize-helpers.test.ts b/src/routes/story-edit/__tests__/zoom-and-resize-helpers.test.ts
+new file mode 100644
+index 0000000..4efdc96
+--- /dev/null
++++ b/src/routes/story-edit/__tests__/zoom-and-resize-helpers.test.ts
+@@ -0,0 +1,64 @@
++import {resizedPassageSize} from '../../../util/passage-resize';
++import {
++	clampZoom,
++	fitZoom,
++	roundZoom,
++	stepZoom,
++	wheelZoom
++} from '../../../util/zoom';
++
++describe('zoom helpers', () => {
++	it('clamps to 30% to 100%', () => {
++		expect(clampZoom(0.1)).toBe(0.3);
++		expect(clampZoom(3)).toBe(1);
++		expect(roundZoom(0.4567)).toBe(0.46);
++	});
++
++	it('steps to the next 10% mark', () => {
++		expect(stepZoom(1, -1)).toBe(0.9);
++		expect(stepZoom(0.45, -1)).toBe(0.4);
++		expect(stepZoom(0.45, 1)).toBe(0.5);
++		expect(stepZoom(0.5, 1)).toBe(0.6);
++		expect(stepZoom(0.3, -1)).toBe(0.3);
++		expect(stepZoom(1, 1)).toBe(1);
++	});
++
++	it('zooms in when scrolling up and out when scrolling down', () => {
++		expect(wheelZoom(0.5, -100)).toBeGreaterThan(0.5);
++		expect(wheelZoom(0.5, 100)).toBeLessThan(0.5);
++		expect(wheelZoom(1, -100)).toBe(1);
++	});
++
++	it('fits all passages in a viewport', () => {
++		const passages = [
++			{height: 100, left: 0, top: 0, width: 100},
++			{height: 100, left: 1900, top: 900, width: 100}
++		];
++
++		expect(fitZoom(passages, 1000, 1000)).toBe(0.48);
++		expect(fitZoom([], 1000, 1000)).toBe(1);
++		expect(
++			fitZoom([{height: 100, left: 0, top: 0, width: 100}], 1000, 1000)
++		).toBe(1);
++	});
++});
++
++describe('resizedPassageSize()', () => {
++	it('adds the drag distance, adjusted for zoom', () => {
++		expect(
++			resizedPassageSize({height: 100, width: 100}, 100, 50, 0.5, false)
++		).toEqual({height: 200, width: 300});
++	});
++
++	it('never goes below the minimum', () => {
++		expect(
++			resizedPassageSize({height: 100, width: 100}, -500, -500, 1, false)
++		).toEqual({height: 100, width: 100});
++	});
++
++	it('snaps to the grid when asked', () => {
++		expect(
++			resizedPassageSize({height: 100, width: 100}, 37, 61, 1, true)
++		).toEqual({height: 150, width: 125});
++	});
++});
 diff --git a/src/routes/story-edit/story-edit-route.tsx b/src/routes/story-edit/story-edit-route.tsx
-index 4e66bf0..4e01665 100644
+index 4e66bf0..7a17104 100644
 --- a/src/routes/story-edit/story-edit-route.tsx
 +++ b/src/routes/story-edit/story-edit-route.tsx
-@@ -3,12 +3,14 @@ import {useParams} from 'react-router-dom';
+@@ -2,13 +2,16 @@ import * as React from 'react';
+ import {useParams} from 'react-router-dom';
  import {MainContent} from '../../components/container/main-content';
  import {DocumentTitle} from '../../components/document-title/document-title';
- import {DialogsContextProvider} from '../../dialogs';
+-import {DialogsContextProvider} from '../../dialogs';
 -import { usePrefsContext } from '../../store/prefs';
++import {DialogsContextProvider, useSavedWindows} from '../../dialogs';
 +import {usePrefsContext} from '../../store/prefs';
  import {storyWithId} from '../../store/stories';
  import {
@@ -1708,31 +3404,448 @@ index 4e66bf0..4e01665 100644
  	useUndoableStoriesContext
  } from '../../store/undoable-stories';
 +import {useDoubleClickCreate} from './use-double-click-create';
-+import {PassageTagMenu} from '../../components/passage/passage-tag-menu';
++import {PassageContextMenu} from '../../components/passage/passage-context-menu';
++import {useAltScroll} from './use-alt-scroll';
  import {MarqueeablePassageMap} from './marqueeable-passage-map';
  import {PassageFuzzyFinder} from './passage-fuzzy-finder';
  import {StoryEditToolbar} from './toolbar';
-@@ -36,12 +38,14 @@ export const InnerStoryEditRoute: React.FC = () => {
+@@ -16,7 +19,8 @@ import {useInitialPassageCreation} from './use-initial-passage-creation';
+ import {usePassageChangeHandlers} from './use-passage-change-handlers';
+ import {useViewCenter} from './use-view-center';
+ import {useZoomShortcuts} from './use-zoom-shortcuts';
+-import {useZoomTransition} from './use-zoom-transition';
++import {usePassageResize} from './use-passage-resize';
++import {useStoryZoom} from './use-story-zoom';
+ import './story-edit-route.css';
+ 
+ export const InnerStoryEditRoute: React.FC = () => {
+@@ -34,16 +38,25 @@ export const InnerStoryEditRoute: React.FC = () => {
+ 		handleSelectPassage,
+ 		handleSelectRect
  	} = usePassageChangeHandlers(story);
- 	const visibleZoom = useZoomTransition(story.zoom, mainContent.current);
+-	const visibleZoom = useZoomTransition(story.zoom, mainContent.current);
++	const zoom = useStoryZoom(story, mainContent);
  
 +	useDoubleClickCreate(story, mainContent, handleEditPassage);
++	useAltScroll(mainContent);
++	usePassageResize(story);
++	useSavedWindows(story);
  	useZoomShortcuts(story);
  	useInitialPassageCreation(story, getCenter);
  
  	return (
- 		<div className="story-edit-route">
+-		<div className="story-edit-route">
++		<div
++			className="story-edit-route"
++			data-snap-to-grid={story.snapToGrid ? 'true' : 'false'}
++		>
  			<DocumentTitle title={story.name} />
-+			<PassageTagMenu story={story} />
++			<PassageContextMenu story={story} />
  			<StoryEditToolbar
  				getCenter={getCenter}
++				onFitZoom={zoom.fit}
  				onOpenFuzzyFinder={() => setFuzzyFinderOpen(true)}
+ 				story={story}
+ 			/>
+@@ -61,8 +74,8 @@ export const InnerStoryEditRoute: React.FC = () => {
+ 					startPassageId={story.startPassage}
+ 					tagColors={story.tagColors}
+ 					tagDisplay={prefs.passageTagDisplay}
+-					visibleZoom={visibleZoom}
+-					zoom={story.zoom}
++					visibleZoom={zoom.visible}
++					zoom={zoom.target}
+ 				/>
+ 				<PassageFuzzyFinder
+ 					onClose={() => setFuzzyFinderOpen(false)}
+diff --git a/src/routes/story-edit/toolbar/__tests__/story-edit-toolbar.test.tsx b/src/routes/story-edit/toolbar/__tests__/story-edit-toolbar.test.tsx
+index be929fa..a20728b 100644
+--- a/src/routes/story-edit/toolbar/__tests__/story-edit-toolbar.test.tsx
++++ b/src/routes/story-edit/toolbar/__tests__/story-edit-toolbar.test.tsx
+@@ -13,6 +13,7 @@ const TestStoryEditToolbar = () => {
+ 	return (
+ 		<StoryEditToolbar
+ 			getCenter={() => ({left: 0, top: 0})}
++			onFitZoom={jest.fn()}
+ 			story={stories[0]}
+ 			onOpenFuzzyFinder={jest.fn()}
+ 		/>
+@@ -58,10 +59,10 @@ describe('<StoryEditToolbar>', () => {
+ 		expect(screen.getByText('common.undo')).toBeInTheDocument();
+ 	});
+ 
+-	it('displays zoom buttons', async () => {
++	it('displays a zoom dropdown', async () => {
+ 		await renderComponent();
+ 		expect(
+-			screen.getByText('routes.storyEdit.zoomButtons.legend')
++			screen.getByText('routes.storyEdit.zoomSelect.legend')
+ 		).toBeInTheDocument();
+ 	});
+ 
+diff --git a/src/routes/story-edit/toolbar/__tests__/zoom-select.test.tsx b/src/routes/story-edit/toolbar/__tests__/zoom-select.test.tsx
+new file mode 100644
+index 0000000..0ba52ad
+--- /dev/null
++++ b/src/routes/story-edit/toolbar/__tests__/zoom-select.test.tsx
+@@ -0,0 +1,53 @@
++import * as React from 'react';
++import {fireEvent, render, screen} from '@testing-library/react';
++import {
++	FakeStateProvider,
++	fakeStory,
++	StoryInspector
++} from '../../../../test-util';
++import {ZoomSelect} from '../zoom-select';
++
++describe('<ZoomSelect>', () => {
++	function renderComponent(zoom: number, onFit = jest.fn()) {
++		const story = fakeStory();
++
++		story.zoom = zoom;
++		render(
++			<FakeStateProvider stories={[story]}>
++				<ZoomSelect onFit={onFit} story={story} />
++				<StoryInspector />
++			</FakeStateProvider>
++		);
++		return {onFit, story};
++	}
++
++	it('shows the current zoom as a percentage', () => {
++		renderComponent(0.6);
++		expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe(
++			'60'
++		);
++	});
++
++	it('adds an option for zoom levels between the presets', () => {
++		renderComponent(0.45);
++		expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe(
++			'45'
++		);
++		expect(screen.getByText('45%')).toBeInTheDocument();
++	});
++
++	it('changes the story zoom when a percentage is chosen', () => {
++		renderComponent(1);
++		fireEvent.change(screen.getByRole('combobox'), {target: {value: '40'}});
++		expect(screen.getByTestId('story-inspector-default').dataset.zoom).toBe(
++			'0.4'
++		);
++	});
++
++	it('calls onFit when Fit is chosen', () => {
++		const {onFit} = renderComponent(1);
++
++		fireEvent.change(screen.getByRole('combobox'), {target: {value: 'fit'}});
++		expect(onFit).toHaveBeenCalledTimes(1);
++	});
++});
+diff --git a/src/routes/story-edit/toolbar/passage/__tests__/delete-passages-button.test.tsx b/src/routes/story-edit/toolbar/passage/__tests__/delete-passages-button.test.tsx
+index 9ef6b0c..1345cee 100644
+--- a/src/routes/story-edit/toolbar/passage/__tests__/delete-passages-button.test.tsx
++++ b/src/routes/story-edit/toolbar/passage/__tests__/delete-passages-button.test.tsx
+@@ -82,7 +82,8 @@ describe('<DeletePassagesButton>', () => {
+ 		let story: Story;
+ 
+ 		beforeEach(() => {
+-			story = fakeStory(1);
++			story = fakeStory(2);
++			story.startPassage = story.passages[1].id;
+ 
+ 			renderComponent(
+ 				{story, passages: [story.passages[0]]},
+@@ -90,32 +91,53 @@ describe('<DeletePassagesButton>', () => {
+ 			);
+ 		});
+ 
+-		it('deletes passages when the Delete key is pressed', () => {
++		it('asks before deleting when the Delete key is pressed', () => {
+ 			fireEvent.keyDown(document.body, {
+ 				key: 'Delete',
+ 				code: 'Delete',
+ 				keyCode: 46,
+ 				charCode: 46
+ 			});
++			expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+ 			expect(
+ 				within(screen.getByTestId('story-inspector-default')).queryAllByTestId(
+ 					/passage-/
+ 				).length
+-			).toBe(0);
++			).toBe(2);
++		});
++
++		it('deletes passages once the Delete key press is confirmed', () => {
++			fireEvent.keyDown(document.body, {
++				key: 'Delete',
++				code: 'Delete',
++				keyCode: 46,
++				charCode: 46
++			});
++			fireEvent.click(
++				within(screen.getByRole('alertdialog')).getByText('common.delete')
++			);
++			expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
++			expect(
++				within(screen.getByTestId('story-inspector-default')).queryAllByTestId(
++					/passage-/
++				).length
++			).toBe(1);
+ 		});
+ 
+-		it('deletes passages when the Backspace key is pressed', () => {
++		it('keeps the passages if the confirmation is cancelled with Escape', () => {
+ 			fireEvent.keyDown(document.body, {
+ 				key: 'Backspace',
+ 				code: 'Backspace',
+ 				keyCode: 8,
+ 				charCode: 8
+ 			});
++			fireEvent.keyDown(window, {key: 'Escape', code: 'Escape', keyCode: 27});
++			expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+ 			expect(
+ 				within(screen.getByTestId('story-inspector-default')).queryAllByTestId(
+ 					/passage-/
+ 				).length
+-			).toBe(0);
++			).toBe(2);
+ 		});
+ 	});
+ 
+diff --git a/src/routes/story-edit/toolbar/passage/delete-passages-button.tsx b/src/routes/story-edit/toolbar/passage/delete-passages-button.tsx
+index 4c6272e..9d07079 100644
+--- a/src/routes/story-edit/toolbar/passage/delete-passages-button.tsx
++++ b/src/routes/story-edit/toolbar/passage/delete-passages-button.tsx
+@@ -3,6 +3,7 @@ import * as React from 'react';
+ import {useHotkeys} from 'react-hotkeys-hook';
+ import {useTranslation} from 'react-i18next';
+ import {IconButton} from '../../../../components/control/icon-button';
++import {DeleteConfirm} from '../../../../components/passage/delete-confirm';
+ import {deletePassages, Passage, Story} from '../../../../store/stories';
+ import {useUndoableStoriesContext} from '../../../../store/undoable-stories';
+ 
+@@ -37,18 +38,42 @@ export const DeletePassagesButton: React.FC<
+ 		);
+ 	}, [dispatch, passages, story]);
+ 
+-	useHotkeys('Backspace,Delete', handleClick, [handleClick]);
++	// The keyboard asks first; the button deletes straight away (Ctrl+Z undoes).
+ 
+-	return (
+-		<IconButton
+-			disabled={disabled}
+-			icon={<IconTrash />}
+-			label={
+-				!disabled && passages.length > 1
+-					? t('common.deleteCount', {count: passages.length})
+-					: t('common.delete')
++	const [confirming, setConfirming] = React.useState(false);
++
++	useHotkeys(
++		'Backspace,Delete',
++		() => {
++			if (!disabled) {
++				setConfirming(true);
+ 			}
+-			onClick={handleClick}
+-		/>
++		},
++		[disabled]
++	);
++
++	return (
++		<>
++			<IconButton
++				disabled={disabled}
++				icon={<IconTrash />}
++				label={
++					!disabled && passages.length > 1
++						? t('common.deleteCount', {count: passages.length})
++						: t('common.delete')
++				}
++				onClick={handleClick}
++			/>
++			{confirming && !disabled && (
++				<DeleteConfirm
++					names={passages.map(passage => passage.name)}
++					onCancel={() => setConfirming(false)}
++					onConfirm={() => {
++						setConfirming(false);
++						handleClick();
++					}}
++				/>
++			)}
++		</>
+ 	);
+ };
+diff --git a/src/routes/story-edit/toolbar/story-edit-toolbar.tsx b/src/routes/story-edit/toolbar/story-edit-toolbar.tsx
+index ca6e26a..0ed9e3a 100644
+--- a/src/routes/story-edit/toolbar/story-edit-toolbar.tsx
++++ b/src/routes/story-edit/toolbar/story-edit-toolbar.tsx
+@@ -7,23 +7,24 @@ import {Point} from '../../../util/geometry';
+ import {PassageActions} from './passage/passage-actions';
+ import {StoryActions} from './story/story-actions';
+ import {UndoRedoButtons} from './undo-redo-buttons';
+-import {ZoomButtons} from './zoom-buttons';
++import {ZoomSelect} from './zoom-select';
+ 
+ export interface StoryEditToolbarProps {
+ 	getCenter: () => Point;
++	onFitZoom: () => void;
+ 	onOpenFuzzyFinder: () => void;
+ 	story: Story;
+ }
+ 
+ export const StoryEditToolbar: React.FC<StoryEditToolbarProps> = props => {
+-	const {getCenter, onOpenFuzzyFinder, story} = props;
++	const {getCenter, onFitZoom, onOpenFuzzyFinder, story} = props;
+ 	const {t} = useTranslation();
+ 
+ 	return (
+ 		<RouteToolbar
+ 			pinnedControls={
+ 				<>
+-					<ZoomButtons story={story} />
++					<ZoomSelect onFit={onFitZoom} story={story} />
+ 					<UndoRedoButtons />
+ 				</>
+ 			}
+diff --git a/src/routes/story-edit/toolbar/zoom-select.css b/src/routes/story-edit/toolbar/zoom-select.css
+new file mode 100644
+index 0000000..e966fd0
+--- /dev/null
++++ b/src/routes/story-edit/toolbar/zoom-select.css
+@@ -0,0 +1,18 @@
++@import '../../../styles/metrics.css';
++
++.zoom-select {
++	align-items: center;
++	display: flex;
++	gap: var(--grid-size);
++	padding: 0 var(--grid-size);
++}
++
++.zoom-select select {
++	background: var(--white);
++	border: 1px solid var(--gray);
++	border-radius: var(--corner-round);
++	color: var(--black);
++	font: inherit;
++	height: 34px;
++	padding: 0 var(--grid-size);
++}
+diff --git a/src/routes/story-edit/toolbar/zoom-select.tsx b/src/routes/story-edit/toolbar/zoom-select.tsx
+new file mode 100644
+index 0000000..a0c987f
+--- /dev/null
++++ b/src/routes/story-edit/toolbar/zoom-select.tsx
+@@ -0,0 +1,65 @@
++import * as React from 'react';
++import {useTranslation} from 'react-i18next';
++import {updateStory, useStoriesContext, Story} from '../../../store/stories';
++import {roundZoom} from '../../../util/zoom';
++import './zoom-select.css';
++
++export interface ZoomSelectProps {
++	onFit: () => void;
++	story: Story;
++}
++
++const presets = [30, 40, 50, 60, 70, 80, 90, 100];
++
++/**
++ * A percentage dropdown for the story map zoom, with a Fit All option.
++ */
++export const ZoomSelect: React.FC<ZoomSelectProps> = React.memo(
++	({onFit, story}) => {
++		const {dispatch, stories} = useStoriesContext();
++		const {t} = useTranslation();
++		const percent = Math.round(story.zoom * 100);
++		const options = presets.includes(percent)
++			? presets
++			: [...presets, percent].sort((a, b) => a - b);
++
++		function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
++			// Give up focus so the keyboard zoom shortcuts work straight away.
++
++			event.target.blur();
++
++			if (event.target.value === 'fit') {
++				onFit();
++				return;
++			}
++
++			dispatch(
++				updateStory(stories, story, {
++					zoom: roundZoom(Number(event.target.value) / 100)
++				})
++			);
++		}
++
++		return (
++			<div className="zoom-buttons zoom-select">
++				<label htmlFor="story-zoom-select">
++					{t('routes.storyEdit.zoomSelect.legend')}
++				</label>
++				<select
++					id="story-zoom-select"
++					onChange={handleChange}
++					value={String(percent)}
++				>
++					{options.map(option => (
++						<option key={option} value={String(option)}>
++							{option}%
++						</option>
++					))}
++					<option value="fit">{t('routes.storyEdit.zoomSelect.fit')}</option>
++				</select>
++			</div>
++		);
++	}
++);
++
++ZoomSelect.displayName = 'ZoomSelect';
+diff --git a/src/routes/story-edit/use-alt-scroll.ts b/src/routes/story-edit/use-alt-scroll.ts
+new file mode 100644
+index 0000000..6140f43
+--- /dev/null
++++ b/src/routes/story-edit/use-alt-scroll.ts
+@@ -0,0 +1,27 @@
++import * as React from 'react';
++
++/**
++ * Holding Alt while scrolling the mouse wheel over the story map scrolls it
++ * sideways instead of up and down.
++ */
++export function useAltScroll(container: React.RefObject<HTMLElement>) {
++	React.useEffect(() => {
++		const element = container.current;
++
++		if (!element) {
++			return;
++		}
++
++		function handleWheel(event: WheelEvent) {
++			if (!event.altKey || !element) {
++				return;
++			}
++
++			event.preventDefault();
++			element.scrollLeft += event.deltaY || event.deltaX;
++		}
++
++		element.addEventListener('wheel', handleWheel, {passive: false});
++		return () => element.removeEventListener('wheel', handleWheel);
++	}, [container]);
++}
 diff --git a/src/routes/story-edit/use-double-click-create.ts b/src/routes/story-edit/use-double-click-create.ts
 new file mode 100644
-index 0000000..8a68349
+index 0000000..6a02937
 --- /dev/null
 +++ b/src/routes/story-edit/use-double-click-create.ts
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,118 @@
 +import * as React from 'react';
 +import {Passage, Story, createUntitledPassage} from '../../store/stories';
 +import {useUndoableStoriesContext} from '../../store/undoable-stories';
@@ -1802,35 +3915,676 @@ index 0000000..8a68349
 +		if (created) {
 +			pendingName.current = undefined;
 +			onEdit(created);
++
++			// Then act as if the user clicked Rename in the new editor, so the name is
++			// ready to type. Esc leaves the default name in place.
++
++			window.setTimeout(() => {
++				const rename = Array.from(
++					document.querySelectorAll<HTMLButtonElement>('.dialogs button')
++				).find(
++					button => !button.disabled && button.textContent?.trim() === 'Rename'
++				);
++
++				rename?.click();
++
++				// Twine's dialogs close themselves on Escape, which would also close the
++				// editor when the user cancels the rename. Keep the editor open, and
++				// move the cursor into the passage text once the name is settled.
++
++				window.setTimeout(() => {
++					const popover = document.querySelector('.dialogs .card-button-card');
++
++					function focusText() {
++						const editor = document.querySelector<
++							HTMLElement & {CodeMirror?: {focus: () => void}}
++						>('.dialogs .CodeMirror');
++
++						editor?.CodeMirror?.focus();
++					}
++
++					popover?.addEventListener('keydown', event => {
++						const key = (event as KeyboardEvent).key;
++
++						if (key === 'Escape') {
++							event.stopPropagation();
++							window.setTimeout(focusText, 100);
++						} else if (key === 'Enter') {
++							// If the name was rejected, the popover stays open; leave it be.
++
++							window.setTimeout(() => {
++								if (!document.querySelector('.dialogs .card-button-card')) {
++									focusText();
++								}
++							}, 500);
++						}
++					});
++				}, 100);
++			}, 250);
 +		}
 +	}, [onEdit, story.passages]);
 +}
+diff --git a/src/routes/story-edit/use-passage-resize.ts b/src/routes/story-edit/use-passage-resize.ts
+new file mode 100644
+index 0000000..c861618
+--- /dev/null
++++ b/src/routes/story-edit/use-passage-resize.ts
+@@ -0,0 +1,48 @@
++import * as React from 'react';
++import {Story, updatePassage} from '../../store/stories';
++import {useUndoableStoriesContext} from '../../store/undoable-stories';
++
++export const passageResizeEvent = 'qol:passage-resize';
++
++export interface PassageResizeDetail {
++	height: number;
++	passageId: string;
++	width: number;
++}
++
++/**
++ * Saves a passage's new size when its card's resize handle is let go. Cards
++ * announce this with a window event so they don't each have to be wired up to
++ * the story.
++ */
++export function usePassageResize(story: Story) {
++	const {dispatch} = useUndoableStoriesContext();
++	const storyRef = React.useRef(story);
++
++	storyRef.current = story;
++
++	React.useEffect(() => {
++		function handleResize(event: Event) {
++			const {height, passageId, width} = (
++				event as CustomEvent<PassageResizeDetail>
++			).detail;
++			const current = storyRef.current;
++			const passage = current.passages.find(p => p.id === passageId);
++
++			if (passage && (passage.width !== width || passage.height !== height)) {
++				dispatch(
++					updatePassage(
++						current,
++						passage,
++						{height, width},
++						{dontUpdateOthers: true}
++					),
++					'undoChange.resizePassage'
++				);
++			}
++		}
++
++		window.addEventListener(passageResizeEvent, handleResize);
++		return () => window.removeEventListener(passageResizeEvent, handleResize);
++	}, [dispatch]);
++}
+diff --git a/src/routes/story-edit/use-story-zoom.ts b/src/routes/story-edit/use-story-zoom.ts
+new file mode 100644
+index 0000000..ae82456
+--- /dev/null
++++ b/src/routes/story-edit/use-story-zoom.ts
+@@ -0,0 +1,107 @@
++import * as React from 'react';
++import {Story, updateStory, useStoriesContext} from '../../store/stories';
++import {Point} from '../../util/geometry';
++import {fitZoom, roundZoom, wheelZoom} from '../../util/zoom';
++import {useZoomTransition} from './use-zoom-transition';
++
++/**
++ * Handles zooming the story map: the animated zoom itself, smooth zooming with
++ * Ctrl+scroll (or trackpad pinch) around the mouse pointer, and fitting all
++ * passages in view.
++ */
++export function useStoryZoom(
++	story: Story,
++	container: React.RefObject<HTMLElement>
++) {
++	const {dispatch, stories} = useStoriesContext();
++	const [pending, setPending] = React.useState<number>();
++	const anchor = React.useRef<Point>();
++	const duration = React.useRef(500);
++	const latest = React.useRef({pending, stories, story});
++	const timer = React.useRef<number>();
++	const target = pending ?? story.zoom;
++	const visible = useZoomTransition(target, container.current, {
++		anchor,
++		duration
++	});
++
++	latest.current = {pending, stories, story};
++
++	const resetTransitionOptions = React.useCallback(() => {
++		anchor.current = undefined;
++		duration.current = 500;
++	}, []);
++
++	// Ctrl+scroll zooms around the pointer. The story itself is only updated once
++	// the user pauses, so we aren't saving the story on every wheel event.
++
++	React.useEffect(() => {
++		const element = container.current;
++
++		if (!element) {
++			return;
++		}
++
++		function handleWheel(event: WheelEvent) {
++			if (!element || !(event.ctrlKey || event.metaKey)) {
++				return;
++			}
++
++			event.preventDefault();
++
++			const rect = element.getBoundingClientRect();
++			const base = latest.current.pending ?? latest.current.story.zoom;
++			const next = wheelZoom(base, event.deltaY);
++
++			anchor.current = {
++				left: event.clientX - rect.left,
++				top: event.clientY - rect.top
++			};
++			duration.current = 100;
++			latest.current.pending = next;
++			setPending(next);
++
++			window.clearTimeout(timer.current);
++			timer.current = window.setTimeout(() => {
++				const {stories: currentStories, story: currentStory} = latest.current;
++
++				dispatch(
++					updateStory(currentStories, currentStory, {zoom: roundZoom(next)})
++				);
++				setPending(undefined);
++				resetTransitionOptions();
++			}, 300);
++		}
++
++		element.addEventListener('wheel', handleWheel, {passive: false});
++		return () => element.removeEventListener('wheel', handleWheel);
++	}, [container, dispatch, resetTransitionOptions]);
++
++	React.useEffect(() => () => window.clearTimeout(timer.current), []);
++
++	const fit = React.useCallback(() => {
++		const element = container.current;
++
++		if (!element) {
++			return;
++		}
++
++		// Zoom with the top left of the map held in place.
++
++		const {stories: currentStories, story: currentStory} = latest.current;
++		const zoom = fitZoom(
++			currentStory.passages,
++			element.clientWidth,
++			element.clientHeight
++		);
++
++		element.scrollLeft = 0;
++		element.scrollTop = 0;
++		anchor.current = {left: 0, top: 0};
++		duration.current = 300;
++		dispatch(updateStory(currentStories, currentStory, {zoom}));
++		window.setTimeout(resetTransitionOptions, 500);
++	}, [container, dispatch, resetTransitionOptions]);
++
++	return {fit, target, visible};
++}
+diff --git a/src/routes/story-edit/use-zoom-shortcuts.ts b/src/routes/story-edit/use-zoom-shortcuts.ts
+index ba96120..4f8d9cf 100644
+--- a/src/routes/story-edit/use-zoom-shortcuts.ts
++++ b/src/routes/story-edit/use-zoom-shortcuts.ts
+@@ -1,5 +1,6 @@
+ import {useHotkeys} from 'react-hotkeys-hook';
+ import {Story, updateStory, useStoriesContext} from '../../store/stories';
++import {stepZoom} from '../../util/zoom';
+ 
+ export function useZoomShortcuts(story: Story) {
+ 	const {dispatch, stories} = useStoriesContext();
+@@ -7,14 +8,10 @@ export function useZoomShortcuts(story: Story) {
+ 	useHotkeys(
+ 		'-',
+ 		() => {
+-			switch (story.zoom) {
+-				case 1:
+-					dispatch(updateStory(stories, story, {zoom: 0.6}));
+-					break;
+-				case 0.6:
+-					dispatch(updateStory(stories, story, {zoom: 0.3}));
+-					break;
+-				// Do nothing if zoom is 0.3
++			const zoom = stepZoom(story.zoom, -1);
++
++			if (zoom !== story.zoom) {
++				dispatch(updateStory(stories, story, {zoom}));
+ 			}
+ 		},
+ 		{keydown: false, keyup: true},
+@@ -23,14 +20,10 @@ export function useZoomShortcuts(story: Story) {
+ 	useHotkeys(
+ 		'=',
+ 		() => {
+-			switch (story.zoom) {
+-				case 0.3:
+-					dispatch(updateStory(stories, story, {zoom: 0.6}));
+-					break;
+-				case 0.6:
+-					dispatch(updateStory(stories, story, {zoom: 1}));
+-					break;
+-				// Do nothing if zoom is 1
++			const zoom = stepZoom(story.zoom, 1);
++
++			if (zoom !== story.zoom) {
++				dispatch(updateStory(stories, story, {zoom}));
+ 			}
+ 		},
+ 		{keydown: false, keyup: true},
+diff --git a/src/routes/story-edit/use-zoom-transition.ts b/src/routes/story-edit/use-zoom-transition.ts
+index 83713b0..aa62f63 100644
+--- a/src/routes/story-edit/use-zoom-transition.ts
++++ b/src/routes/story-edit/use-zoom-transition.ts
+@@ -2,169 +2,149 @@ import * as React from 'react';
+ import {quadOut} from 'eases';
+ import {Point} from '../../util/geometry';
+ 
+-/**
+- * Information about a single zoom transition.
+- */
+ interface ZoomTransition {
+-	/**
+-	 * How much time has elapsed, in seconds.
+-	 */
++	duration: number;
+ 	elapsed: number;
+-	/**
+-	 * The last timestamp an update was done, in seconds.
+-	 */
++	end: number;
+ 	lastTimestamp?: number;
+ 	/**
+-	 * The point the scrollTarget was centered on when the transition began,
+-	 * normalized for zoom level. e.g. if it was centered on (100, 100) but the
+-	 * story zoom was 0.5, this is (200, 200).
++	 * The point the zoom is centered on, normalized for zoom level (e.g. a point
++	 * at (100, 100) while zoomed to 0.5 is stored as (200, 200)).
+ 	 */
+ 	scrollNormalizedCenter: Point;
+ 	/**
+-	 * The current point the scrollTarget is centered on.
++	 * Where that point sits within the visible area of the scroll target.
+ 	 */
+-	scrollCenter: {
+-		height: number;
+-		width: number;
+-	};
++	scrollCenter: {height: number; width: number};
++	scrollTarget: HTMLElement;
++	start: number;
++	change: number;
++}
++
++export interface ZoomTransitionOptions {
+ 	/**
+-	 * The element whose scroll position is being maintained.
++	 * A point within the scroll target's visible area to keep fixed while zooming
++	 * (for example, the mouse pointer). The center of the area is used if unset.
+ 	 */
+-	scrollTarget: HTMLElement;
++	anchor?: React.RefObject<Point | undefined>;
+ 	/**
+-	 * How the zoom is changing during this transition.
++	 * How long a transition takes, in milliseconds. Defaults to 500.
+ 	 */
+-	zoom: {
+-		start: number;
+-		change: number;
+-	};
+-}
+-
+-/**
+- * Runs a single step of the zoom transition. This is outside the effect to
+- * avoid dependencies.
+- * @param setter Setter function for the zoom value
+- * @param start Value of the zoom when the transition began
+- * @param change Change in zoom value for the entire transition
+- * @param time Elapsed time in seconds--assumes total time is 1 second
+- * 
+- * @return transitioned value of zoom
+- */
+-function transitionStep(
+-	setter: React.Dispatch<React.SetStateAction<number>>,
+-	start: number,
+-	change: number,
+-	time: number
+-) {
+-	let value: number;
+-
+-	if (time < 1) {
+-		// Step toward the change.
+-
+-		value = start + change * quadOut(time);
+-		setter(value);
+-		return value;
+-	}
+-
+-	// We're done.
+-
+-	setter(start + change);
++	duration?: React.RefObject<number>;
+ }
+ 
+ /**
+  * Manages transitioning zoom level of a story while maintaining the scroll
+  * position's focus. This is meant to be called repeatedly with different
+  * values, and returns the _visible_ zoom--what the user should see as zoom
+- * value, which gradually changes over time.
++ * value, which gradually changes over time. If the target changes in the middle
++ * of a transition, the transition starts again from wherever it has reached.
+  *
+- * @param target Zoom value to transition towrds
++ * @param target Zoom value to transition towards
+  * @param scrollTarget DOM element whose scroll position should be manipulated
+  * to match the returned value
++ * @param options Optional anchor point and duration
+  */
+ export function useZoomTransition(
+ 	target: number,
+-	scrollTarget: HTMLElement | null
++	scrollTarget: HTMLElement | null,
++	options: ZoomTransitionOptions = {}
+ ) {
+ 	const [current, setCurrent] = React.useState(target);
++	const currentRef = React.useRef(target);
+ 	const transition = React.useRef<ZoomTransition>();
++	const frame = React.useRef<number>();
++	const optionsRef = React.useRef(options);
+ 
+-	// This queues a single transition step using requestAnimationFrame. It's
+-	// crucial that this callback have no dependencies; otherwise things could get
+-	// confused in the middle of a transition.
++	optionsRef.current = options;
+ 
+-	const step = React.useCallback(() => {
+-		if (!transition.current) {
++	// This has no dependencies so it can be safely queued with
++	// requestAnimationFrame in the middle of a transition.
++
++	const step = React.useCallback((timestamp: number) => {
++		const t = transition.current;
++
++		if (!t) {
++			frame.current = undefined;
+ 			return;
+ 		}
+ 
+-		window.requestAnimationFrame(timestamp => {
+-			const t = transition.current as ZoomTransition;
+-
+-			if (t.lastTimestamp) {
+-				// Complete the transition in 0.5 seconds, not 1.
+-				t.elapsed += (timestamp - t.lastTimestamp) / 500;
+-				t.lastTimestamp = timestamp;
+-
+-				const value = transitionStep(
+-					setCurrent,
+-					t.zoom.start,
+-					t.zoom.change,
+-					t.elapsed
+-				);
+-
+-				if (value) {
+-					// Sync scroll position and request a new animation step.
+-
+-					const newLeft =
+-						t.scrollNormalizedCenter.left * value - t.scrollCenter.width;
+-					const newTop =
+-						t.scrollNormalizedCenter.top * value - t.scrollCenter.height;
+-
+-					if (newLeft >= 0 && newTop >= 0) {
+-						t.scrollTarget.scrollLeft = newLeft;
+-						t.scrollTarget.scrollTop = newTop;
+-					}
+-
+-					step();
+-				} else {
+-					// We've reached the end.
+-					transition.current = undefined;
+-				}
+-			} else {
+-				// This is the first time we've been called in a transition. Record the
+-				// timestamp and try again.
+-
+-				t.lastTimestamp = timestamp;
+-				step();
+-			}
+-		});
++		if (t.lastTimestamp !== undefined) {
++			t.elapsed += (timestamp - t.lastTimestamp) / t.duration;
++		}
++
++		t.lastTimestamp = timestamp;
++
++		const done = t.elapsed >= 1;
++		const value = done ? t.end : t.start + t.change * quadOut(t.elapsed);
++
++		currentRef.current = value;
++		setCurrent(value);
++
++		// Keep the anchor point where it was on screen.
++
++		t.scrollTarget.scrollLeft = Math.max(
++			0,
++			t.scrollNormalizedCenter.left * value - t.scrollCenter.width
++		);
++		t.scrollTarget.scrollTop = Math.max(
++			0,
++			t.scrollNormalizedCenter.top * value - t.scrollCenter.height
++		);
++
++		if (done) {
++			transition.current = undefined;
++			frame.current = undefined;
++		} else {
++			frame.current = window.requestAnimationFrame(step);
++		}
+ 	}, []);
+ 
+-	// Start a new transition.
++	// Start a new transition, or redirect the one in progress.
+ 
+ 	React.useEffect(() => {
+-		if (!transition.current && current !== target && scrollTarget) {
+-			transition.current = {
+-				scrollTarget,
+-				elapsed: 0,
+-				scrollNormalizedCenter: {
+-					left:
+-						(scrollTarget.scrollLeft + scrollTarget.clientWidth / 2) / current,
+-					top:
+-						(scrollTarget.scrollTop + scrollTarget.clientHeight / 2) / current
+-				},
+-				scrollCenter: {
+-					height: scrollTarget.clientHeight / 2,
+-					width: scrollTarget.clientWidth / 2
+-				},
+-				zoom: {
+-					start: current,
+-					change: target - current
+-				}
+-			};
+-			window.requestAnimationFrame(step);
++		if (!scrollTarget || target === currentRef.current) {
++			return;
++		}
++
++		if (transition.current && transition.current.end === target) {
++			return;
+ 		}
+-	}, [current, scrollTarget, step, target]);
++
++		const anchor = optionsRef.current.anchor?.current;
++		const center = anchor ?? {
++			left: scrollTarget.clientWidth / 2,
++			top: scrollTarget.clientHeight / 2
++		};
++		const value = currentRef.current;
++
++		transition.current = {
++			scrollTarget,
++			change: target - value,
++			duration: optionsRef.current.duration?.current ?? 500,
++			elapsed: 0,
++			end: target,
++			scrollCenter: {height: center.top, width: center.left},
++			scrollNormalizedCenter: {
++				left: (scrollTarget.scrollLeft + center.left) / value,
++				top: (scrollTarget.scrollTop + center.top) / value
++			},
++			start: value
++		};
++
++		if (frame.current === undefined) {
++			frame.current = window.requestAnimationFrame(step);
++		}
++	}, [scrollTarget, step, target]);
++
++	React.useEffect(
++		() => () => {
++			if (frame.current !== undefined) {
++				window.cancelAnimationFrame(frame.current);
++			}
++		},
++		[]
++	);
+ 
+ 	return current;
+ }
+diff --git a/src/store/prefs/__tests__/reducer.test.ts b/src/store/prefs/__tests__/reducer.test.ts
+index 221241a..968e2d3 100644
+--- a/src/store/prefs/__tests__/reducer.test.ts
++++ b/src/store/prefs/__tests__/reducer.test.ts
+@@ -4,7 +4,7 @@ import {defaults} from '../defaults';
+ import {reducer} from '../reducer';
+ 
+ describe('Pref reducer', () => {
+-	const defs = defaults();
++	const defs = {...defaults(), modTagDisplayMigrated: true};
+ 
+ 	describe('the init action', () => {
+ 		it('replaces state', () =>
+@@ -90,8 +90,8 @@ describe('Pref reducer', () => {
+ 			expect(Number.isFinite(result.firstRunTime)).toBe(true);
+ 		});
+ 
+-		it.each(['color', 'name'])(
+-			'leaves passageTagDisplay intact if it is \'%s\'',
++		it.each(['color', 'name', 'outline'])(
++			"leaves passageTagDisplay intact if it is '%s'",
+ 			value => {
+ 				const result = reducer({...defs, passageTagDisplay: value} as any, {
+ 					allFormats,
+@@ -103,17 +103,56 @@ describe('Pref reducer', () => {
+ 		);
+ 
+ 		it.each([[1], ['not an accepted value'], [false], [null]])(
+-			"replaces passageTagDisplay with 'color' if it is '%s'",
++			"replaces passageTagDisplay with 'outline' if it is '%s'",
+ 			value => {
+ 				const result = reducer({...defs, passageTagDisplay: value} as any, {
+ 					allFormats,
+ 					type: 'repair'
+ 				});
+ 
+-				expect(result.passageTagDisplay).toBe('color');
++				expect(result.passageTagDisplay).toBe('outline');
+ 			}
+ 		);
+ 
++		describe('moving the old outlines setting into passageTagDisplay', () => {
++			it.each([
++				['color', true, 'outline'],
++				['color', undefined, 'outline'],
++				['color', false, 'color'],
++				['name', true, 'name']
++			])(
++				'turns %s with outlines %s into %s, once',
++				(display, outlines, expected) => {
++					const result = reducer(
++						{
++							...defs,
++							modTagDisplayMigrated: false,
++							passageTagDisplay: display,
++							passageTagOutlines: outlines
++						} as any,
++						{allFormats, type: 'repair'}
++					);
++
++					expect(result.passageTagDisplay).toBe(expected);
++					expect(result.modTagDisplayMigrated).toBe(true);
++				}
++			);
++
++			it("doesn't change a choice made after migrating", () => {
++				const result = reducer(
++					{
++						...defs,
++						modTagDisplayMigrated: true,
++						passageTagDisplay: 'color',
++						passageTagOutlines: true
++					} as any,
++					{allFormats, type: 'repair'}
++				);
++
++				expect(result.passageTagDisplay).toBe('color');
++			});
++		});
++
+ 		describe("if there isn't a format for the proofing format preference", () => {
+ 			it('replaces it with the newest version available for that format name', () => {
+ 				const result = reducer(
 diff --git a/src/store/prefs/defaults.ts b/src/store/prefs/defaults.ts
-index 5417353..6ecfe9b 100644
+index 5417353..972e998 100644
 --- a/src/store/prefs/defaults.ts
 +++ b/src/store/prefs/defaults.ts
-@@ -19,6 +19,8 @@ export const defaults = (): PrefsState => ({
+@@ -18,7 +18,11 @@ export const defaults = (): PrefsState => ({
+ 		'en-us',
  	passageEditorFontFamily: 'var(--font-system)',
  	passageEditorFontScale: 1,
- 	passageTagDisplay: 'color',
-+	passageTagOutlines: true,
+-	passageTagDisplay: 'color',
++	passageTagDisplay: 'outline',
++	linkTemplate: '[[▹ Label.->{passage}]]',
++	modTagDisplayMigrated: false,
 +	quickPasteText: '',
++	savedWindows: '{}',
  	proofingFormat: {
  		name: 'Paperthin',
  		version: '1.0.0'
 diff --git a/src/store/prefs/prefs.types.ts b/src/store/prefs/prefs.types.ts
-index 668dbe0..aaf3117 100644
+index 668dbe0..ab30dc3 100644
 --- a/src/store/prefs/prefs.types.ts
 +++ b/src/store/prefs/prefs.types.ts
-@@ -80,6 +80,15 @@ export interface PrefsState {
+@@ -79,7 +79,26 @@ export interface PrefsState {
+ 	 * colors) or tag names (list all tags, even uncolored tags) of tags on passage
  	 * cards in the story map.
  	 */
- 	passageTagDisplay: 'color' | 'name';
+-	passageTagDisplay: 'color' | 'name';
++	passageTagDisplay: 'color' | 'name' | 'outline';
 +	/**
-+	 * Draw tag colors as an outline around passage cards (true) or as the
-+	 * original thin stripe (false). Only applies when tags are shown as colors.
++	 * Template for links the mod creates (Branch). {passage} is replaced with the
++	 * target passage name.
 +	 */
-+	passageTagOutlines: boolean;
++	linkTemplate: string;
++	/**
++	 * Windows (editors, pinned passages and so on) to reopen for each story, as a
++	 * JSON string keyed by story ID.
++	 */
++	savedWindows: string;
++	/**
++	 * Set once the old separate "tag colors as outlines" setting has been folded
++	 * into passageTagDisplay.
++	 */
++	modTagDisplayMigrated: boolean;
 +	/**
 +	 * Text inserted at the cursor by the Quick Paste button in the passage editor.
 +	 */
@@ -1838,22 +4592,350 @@ index 668dbe0..aaf3117 100644
  	/**
  	 * Name and version of the selected proofing format.
  	 */
+diff --git a/src/store/prefs/reducer.ts b/src/store/prefs/reducer.ts
+index 3927736..25938b5 100644
+--- a/src/store/prefs/reducer.ts
++++ b/src/store/prefs/reducer.ts
+@@ -13,6 +13,24 @@ export const reducer: React.Reducer<PrefsState, PrefsAction> = (
+ 		case 'repair': {
+ 			const defs = defaults();
+ 
++			// The mod used to have a separate "tag colors as outlines" setting, which
++			// was on unless turned off. It is now a choice in the tag display setting,
++			// so carry the old choice over once.
++
++			if (!state.modTagDisplayMigrated) {
++				const legacyOutlines = (state as unknown as Record<string, unknown>)
++					.passageTagOutlines;
++
++				state = {
++					...state,
++					modTagDisplayMigrated: true,
++					passageTagDisplay:
++						state.passageTagDisplay === 'color' && legacyOutlines !== false
++							? 'outline'
++							: state.passageTagDisplay
++				};
++			}
++
+ 			// Type check values.
+ 
+ 			const changes: Partial<PrefsState> = Object.entries(defs).reduce(
+@@ -35,7 +53,7 @@ export const reducer: React.Reducer<PrefsState, PrefsAction> = (
+ 					if (
+ 						key === 'passageTagDisplay' &&
+ 						// cast here is OK; [1, 2].includes('a') is valid and returns false
+-						!['color', 'name'].includes(state[prefKey] as string)
++						!['color', 'name', 'outline'].includes(state[prefKey] as string)
+ 					) {
+ 						console.info(
+ 							`Repairing preference "${key}" by setting it to ${value}, was ${state[prefKey]} (not a valid value)`
+diff --git a/src/store/stories/action-creators/update-passage.ts b/src/store/stories/action-creators/update-passage.ts
+index a66713c..b645ba3 100644
+--- a/src/store/stories/action-creators/update-passage.ts
++++ b/src/store/stories/action-creators/update-passage.ts
+@@ -1,5 +1,6 @@
+ import escapeRegExp from 'lodash/escapeRegExp';
+ import {Thunk} from 'react-hook-thunk-reducer';
++import {relinkChapbookInserts} from '../../../util/relink-chapbook';
+ import {storyWithId} from '../getters';
+ import {Passage, StoriesAction, StoriesState, Story} from '../stories.types';
+ import {createNewlyLinkedPassages} from './create-newly-linked-passages';
+@@ -82,26 +83,23 @@ export function updatePassage(
+ 			);
+ 
+ 			story.passages.forEach(relinkedPassage => {
+-				if (
+-					simpleLinkRegexp.test(relinkedPassage.text) ||
+-					compoundLinkRegexp.test(relinkedPassage.text) ||
+-					reverseLinkRegexp.test(relinkedPassage.text)
+-				) {
+-					let newText = relinkedPassage.text;
+-
+-					newText = newText.replace(
+-						simpleLinkRegexp,
+-						'[[' + newNameEscaped + '$1]]'
+-					);
+-					newText = newText.replace(
+-						compoundLinkRegexp,
+-						'[[$1$2' + newNameEscaped + '$3]]'
+-					);
+-					newText = newText.replace(
+-						reverseLinkRegexp,
+-						'[[' + newNameEscaped + '$1$2]]'
+-					);
+-
++				let newText = relinkedPassage.text;
++
++				newText = newText.replace(
++					simpleLinkRegexp,
++					'[[' + newNameEscaped + '$1]]'
++				);
++				newText = newText.replace(
++					compoundLinkRegexp,
++					'[[$1$2' + newNameEscaped + '$3]]'
++				);
++				newText = newText.replace(
++					reverseLinkRegexp,
++					'[[' + newNameEscaped + '$1$2]]'
++				);
++				newText = relinkChapbookInserts(newText, oldName, props.name as string);
++
++				if (newText !== relinkedPassage.text) {
+ 					updatePassage(
+ 						story,
+ 						relinkedPassage,
 diff --git a/src/test-util/fakes.ts b/src/test-util/fakes.ts
-index fed502d..88a3abd 100644
+index fed502d..442983f 100644
 --- a/src/test-util/fakes.ts
 +++ b/src/test-util/fakes.ts
-@@ -128,6 +128,8 @@ export function fakePrefs(overrides?: Partial<PrefsState>): PrefsState {
+@@ -128,6 +128,10 @@ export function fakePrefs(overrides?: Partial<PrefsState>): PrefsState {
  		passageEditorFontFamily: faker.lorem.words(2),
  		passageEditorFontScale: 0.8 + faker.number.float(0.5),
  		passageTagDisplay: 'color',
-+		passageTagOutlines: true,
++		linkTemplate: '[[▹ Label.->{passage}]]',
++		modTagDisplayMigrated: true,
++		savedWindows: '{}',
 +		quickPasteText: faker.lorem.words(3),
  		proofingFormat: {
  			name: faker.lorem.words(2),
  			version: faker.system.semver()
+diff --git a/src/util/__tests__/batch-1-helpers.test.ts b/src/util/__tests__/batch-1-helpers.test.ts
+new file mode 100644
+index 0000000..f5f1d2e
+--- /dev/null
++++ b/src/util/__tests__/batch-1-helpers.test.ts
+@@ -0,0 +1,99 @@
++import {appendLink, makeLink} from '../branch-link';
++import {linesToArray} from '../lines-to-array';
++import {copyName, nextNumberedName} from '../passage-names';
++import {relinkChapbookInserts} from '../relink-chapbook';
++
++describe('nextNumberedName()', () => {
++	it('adds 1 to a name with no number', () => {
++		expect(nextNumberedName('Title', ['Title'])).toBe('Title1');
++	});
++
++	it('increments a trailing number', () => {
++		expect(nextNumberedName('Open1', ['Open1'])).toBe('Open2');
++		expect(nextNumberedName('Open.Slow9', [])).toBe('Open.Slow10');
++	});
++
++	it('skips numbers that are already used', () => {
++		expect(nextNumberedName('Open.Slow1', ['Open.Slow2'])).toBe('Open.Slow3');
++	});
++});
++
++describe('copyName()', () => {
++	it('adds copy, then numbers it if needed', () => {
++		expect(copyName('Open1', [])).toBe('Open1 copy');
++		expect(copyName('Open1', ['Open1 copy'])).toBe('Open1 copy 2');
++		expect(copyName('Open1', ['Open1 copy', 'Open1 copy 2'])).toBe(
++			'Open1 copy 3'
++		);
++	});
++});
++
++describe('makeLink() and appendLink()', () => {
++	it('fills in the passage name', () => {
++		expect(makeLink('[[▹ Label.->{passage}]]', 'Open2')).toBe(
++			'[[▹ Label.->Open2]]'
++		);
++	});
++
++	it('falls back to the default template if there is no {passage}', () => {
++		expect(makeLink('[[nothing]]', 'Open2')).toBe('[[▹ Label.->Open2]]');
++	});
++
++	it('puts a link on its own after other text with a blank line', () => {
++		expect(appendLink('Hello there.', '[[x->A]]')).toBe(
++			'Hello there.\n\n[[x->A]]'
++		);
++		expect(appendLink('', '[[x->A]]')).toBe('[[x->A]]');
++	});
++
++	it('puts a link on the next line after another link', () => {
++		expect(appendLink('Hello.\n\n[[a->B]]\n', '[[x->A]]')).toBe(
++			'Hello.\n\n[[a->B]]\n[[x->A]]'
++		);
++	});
++});
++
++describe('linesToArray()', () => {
++	it('turns lines into an array', () => {
++		expect(linesToArray('a\nb\n\n c ')).toBe("['a', 'b', 'c']");
++	});
++
++	it('escapes quotes and backslashes', () => {
++		expect(linesToArray("it's\nback\\slash")).toBe(
++			"['it\\'s', 'back\\\\slash']"
++		);
++	});
++});
++
++describe('relinkChapbookInserts()', () => {
++	it('updates the passage in link to and embed passage inserts', () => {
++		expect(
++			relinkChapbookInserts("{link to: 'Old', label: 'Old'}", 'Old', 'New')
++		).toBe("{link to: 'New', label: 'Old'}");
++		expect(relinkChapbookInserts('{embed passage: "Old"}', 'Old', 'New')).toBe(
++			'{embed passage: "New"}'
++		);
++	});
++
++	it('updates the passage option of reveal link inserts', () => {
++		expect(
++			relinkChapbookInserts(
++				"{reveal link: 'Old', passage: 'Old'}",
++				'Old',
++				'New'
++			)
++		).toBe("{reveal link: 'Old', passage: 'New'}");
++	});
++
++	it('leaves other text and other passages alone', () => {
++		const text = "Old {link to: 'Other'} {back link}";
++
++		expect(relinkChapbookInserts(text, 'Old', 'New')).toBe(text);
++	});
++
++	it('escapes a quote in the new name', () => {
++		expect(relinkChapbookInserts("{link to: 'Old'}", 'Old', "Bob's")).toBe(
++			"{link to: 'Bob\\'s'}"
++		);
++	});
++});
+diff --git a/src/util/branch-link.ts b/src/util/branch-link.ts
+new file mode 100644
+index 0000000..9244f94
+--- /dev/null
++++ b/src/util/branch-link.ts
+@@ -0,0 +1,30 @@
++export const defaultLinkTemplate = '[[▹ Label.->{passage}]]';
++
++/**
++ * Builds a link from a template, replacing {passage} with the target name. If
++ * the template has no {passage} in it, the default template is used instead so
++ * we never produce a link that goes nowhere.
++ */
++export function makeLink(template: string, passageName: string) {
++	const usable = template.includes('{passage}')
++		? template
++		: defaultLinkTemplate;
++
++	return usable.split('{passage}').join(passageName);
++}
++
++/**
++ * Adds a link to the end of passage text. Links that follow other links go on
++ * the next line; anything else gets a blank line first.
++ */
++export function appendLink(text: string, link: string) {
++	const trimmed = text.replace(/\s+$/, '');
++
++	if (trimmed === '') {
++		return link;
++	}
++
++	const lastLine = trimmed.split('\n').pop() ?? '';
++
++	return `${trimmed}${lastLine.trimStart().startsWith('[[') ? '\n' : '\n\n'}${link}`;
++}
+diff --git a/src/util/lines-to-array.ts b/src/util/lines-to-array.ts
+new file mode 100644
+index 0000000..5f121be
+--- /dev/null
++++ b/src/util/lines-to-array.ts
+@@ -0,0 +1,13 @@
++/**
++ * Turns lines of text into an array literal: "a\nb\nc" becomes ['a', 'b', 'c'].
++ * Blank lines are skipped, and quotes and backslashes are escaped.
++ */
++export function linesToArray(text: string) {
++	const items = text
++		.split(/\r?\n/)
++		.map(line => line.trim())
++		.filter(line => line !== '')
++		.map(line => `'${line.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`);
++
++	return `[${items.join(', ')}]`;
++}
+diff --git a/src/util/passage-names.ts b/src/util/passage-names.ts
+new file mode 100644
+index 0000000..c0ead74
+--- /dev/null
++++ b/src/util/passage-names.ts
+@@ -0,0 +1,32 @@
++/**
++ * Returns a name for a passage that continues the number at the end of an
++ * existing name ("Open1" becomes "Open2"), or adds a 1 if there isn't one
++ * ("Title" becomes "Title1"). Skips any number that's already taken.
++ */
++export function nextNumberedName(name: string, existing: string[]) {
++	const match = name.match(/^(.*?)(\d+)$/);
++	const base = match ? match[1] : name;
++	let number = match ? parseInt(match[2], 10) + 1 : 1;
++
++	while (existing.includes(`${base}${number}`)) {
++		number++;
++	}
++
++	return `${base}${number}`;
++}
++
++/**
++ * Returns a name for a duplicate of a passage: "Name copy", then "Name copy 2",
++ * "Name copy 3" and so on if those are taken.
++ */
++export function copyName(name: string, existing: string[]) {
++	let candidate = `${name} copy`;
++	let number = 2;
++
++	while (existing.includes(candidate)) {
++		candidate = `${name} copy ${number}`;
++		number++;
++	}
++
++	return candidate;
++}
+diff --git a/src/util/passage-resize.ts b/src/util/passage-resize.ts
+new file mode 100644
+index 0000000..43ae925
+--- /dev/null
++++ b/src/util/passage-resize.ts
+@@ -0,0 +1,29 @@
++export const minPassageSize = 100;
++const gridSize = 25;
++
++/**
++ * Size of a passage card while its corner handle is dragged. `scale` is how
++ * much the story map is zoomed, so on-screen movement is converted back to map
++ * units. Never smaller than the minimum, and snapped to the grid if asked.
++ */
++export function resizedPassageSize(
++	start: {height: number; width: number},
++	dragX: number,
++	dragY: number,
++	scale: number,
++	snapToGrid: boolean
++) {
++	const safeScale = scale > 0 ? scale : 1;
++	let width = start.width + dragX / safeScale;
++	let height = start.height + dragY / safeScale;
++
++	if (snapToGrid) {
++		width = Math.round(width / gridSize) * gridSize;
++		height = Math.round(height / gridSize) * gridSize;
++	}
++
++	return {
++		height: Math.max(minPassageSize, Math.round(height)),
++		width: Math.max(minPassageSize, Math.round(width))
++	};
++}
 diff --git a/src/util/qol-mod.ts b/src/util/qol-mod.ts
 new file mode 100644
-index 0000000..9e6d265
+index 0000000..fe26f28
 --- /dev/null
 +++ b/src/util/qol-mod.ts
 @@ -0,0 +1,8 @@
@@ -1863,5 +4945,120 @@ index 0000000..9e6d265
 + */
 +export const qolMod = {
 +	name: 'QoL Mod for Twine',
-+	version: '1.2.0'
++	version: '1.5.1'
 +};
+diff --git a/src/util/relink-chapbook.ts b/src/util/relink-chapbook.ts
+new file mode 100644
+index 0000000..6e13503
+--- /dev/null
++++ b/src/util/relink-chapbook.ts
+@@ -0,0 +1,40 @@
++import escapeRegExp from 'lodash/escapeRegExp';
++
++function quoted(name: string, quote: string) {
++	return name.replace(/\\/g, '\\\\').split(quote).join(`\\${quote}`);
++}
++
++/**
++ * Updates Chapbook inserts that refer to a passage by name, such as
++ * {link to: 'Old name'} and {embed passage: 'Old name'}, after the passage is
++ * renamed. Only the exact passage-name value is changed, never labels.
++ */
++export function relinkChapbookInserts(
++	text: string,
++	oldName: string,
++	newName: string
++) {
++	const old = escapeRegExp(oldName);
++
++	return text.replace(/\{[^{}]*\}/g, block => {
++		const key = block.match(/^\{\s*([a-z ]+?)\s*:/i)?.[1].toLowerCase();
++
++		if (key === 'link to' || key === 'embed passage') {
++			return block.replace(
++				new RegExp(`^(\\{\\s*${key}\\s*:\\s*)(['"])${old}\\2`, 'i'),
++				(_, before: string, quote: string) =>
++					`${before}${quote}${quoted(newName, quote)}${quote}`
++			);
++		}
++
++		if (key === 'reveal link') {
++			return block.replace(
++				new RegExp(`(\\bpassage\\s*:\\s*)(['"])${old}\\2`, 'i'),
++				(_, before: string, quote: string) =>
++					`${before}${quote}${quoted(newName, quote)}${quote}`
++			);
++		}
++
++		return block;
++	});
++}
+diff --git a/src/util/zoom.ts b/src/util/zoom.ts
+new file mode 100644
+index 0000000..687ca44
+--- /dev/null
++++ b/src/util/zoom.ts
+@@ -0,0 +1,63 @@
++import {Passage} from '../store/stories';
++
++export const minZoom = 0.3;
++export const maxZoom = 1;
++
++/**
++ * Keeps a zoom value in the range the story map supports.
++ */
++export function clampZoom(zoom: number) {
++	return Math.min(maxZoom, Math.max(minZoom, zoom));
++}
++
++/**
++ * Rounds a zoom value for storing in a story, so story files stay tidy.
++ */
++export function roundZoom(zoom: number) {
++	return Math.round(clampZoom(zoom) * 100) / 100;
++}
++
++/**
++ * Steps a zoom value to the next 10% mark, in or out.
++ */
++export function stepZoom(zoom: number, direction: 1 | -1) {
++	const next =
++		direction > 0
++			? Math.floor(zoom * 10 + 1e-6) / 10 + 0.1
++			: Math.ceil(zoom * 10 - 1e-6) / 10 - 0.1;
++
++	return roundZoom(next);
++}
++
++/**
++ * Zoom value after a mouse wheel or trackpad pinch event. Scrolling up zooms
++ * in. The result isn't rounded, so very small trackpad movements add up.
++ */
++export function wheelZoom(zoom: number, deltaY: number) {
++	return clampZoom(zoom * Math.exp(-deltaY * 0.0015));
++}
++
++/**
++ * The largest zoom at which every passage fits in a viewport, never zooming in
++ * past 100%.
++ */
++export function fitZoom(
++	passages: Pick<Passage, 'height' | 'left' | 'top' | 'width'>[],
++	viewportWidth: number,
++	viewportHeight: number
++) {
++	if (passages.length === 0 || viewportWidth <= 0 || viewportHeight <= 0) {
++		return 1;
++	}
++
++	const margin = 50;
++	const right = Math.max(...passages.map(p => p.left + p.width)) + margin;
++	const bottom = Math.max(...passages.map(p => p.top + p.height)) + margin;
++
++	return (
++		Math.floor(
++			clampZoom(Math.min(1, viewportWidth / right, viewportHeight / bottom)) *
++				100
++		) / 100
++	);
++}
