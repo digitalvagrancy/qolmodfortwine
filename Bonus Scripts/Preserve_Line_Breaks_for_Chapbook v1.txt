@@ -1,0 +1,74 @@
+==============================================================
+PRESERVE LINE BREAKS FOR CHAPBOOK
+A small style tweak for Twine 2 stories (Chapbook story format)
+==============================================================
+
+WORKS WITH
+----------
+Chapbook only, inside Twine 2.
+It will NOT work as-is in Harlowe, SugarCube or Snowman.
+
+
+WHAT IT DOES
+------------
+Normally Chapbook ignores single line breaks and runs the lines
+together. This instead makes your story show line breaks exactly
+as you typed them in the Twine editor.
+
+Note: passages you've already written may look different after
+you add it, because lines that used to run together will now
+break where you pressed Enter.
+
+
+WHAT IS THIS, TECHNICALLY?
+--------------------------
+It's a "style snippet" (CSS). There's no JavaScript and nothing
+to download. You paste it into your story's Stylesheet once.
+
+
+WHAT YOU CAN TWEAK
+------------------
+Only one thing. In the code, the word "pre-line" can be changed
+to "pre-wrap". This also keeps extra spaces you type, such as
+several spaces in a row. Most people should leave it as "pre-line".
+
+
+INSTALLATION
+------------
+You do this once for every story (project). It does not carry
+over to new stories. Each new story needs it pasted in again.
+
+ 1. Open your story in Twine 2.
+
+ 2. In the top menu, click Story, then click Stylesheet.
+
+ 3. Click inside the text box. If there are already styles
+    there, leave them alone. Jump to the very bottom (Ctrl+End
+    on Windows, Cmd+Down arrow on Mac), then press Enter once
+    or twice to leave a blank line.
+
+ 4. Copy everything between the START and END lines below, and
+    paste it at the bottom.
+
+ 5. Close the window. Twine saves automatically.
+
+ 6. Test your story. Line breaks should now appear as typed.
+
+Does order matter? No. Underneath any existing styles is fine.
+Paste it once only.
+
+If nothing changes, check you used Story > Stylesheet and not
+Story > JavaScript.
+
+
+--------------------------------------------------------------
+CODE (paste into Story > Stylesheet)
+--------------------------------------------------------------
+
+/* ===== START: Preserve Line Breaks for Chapbook ===== */
+
+#page article p, article p {
+  white-space: pre-line; /* change to pre-wrap to also keep extra spaces */
+}
+
+/* ===== END: Preserve Line Breaks for Chapbook ===== */

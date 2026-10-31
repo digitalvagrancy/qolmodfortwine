@@ -1,0 +1,162 @@
+==============================================================
+SETTER LINKS FOR CHAPBOOK
+An extension for Twine 2 stories (Chapbook story format)
+==============================================================
+
+WORKS WITH
+----------
+Chapbook only (version 2.0.0 or newer), inside Twine 2.
+It will NOT work in Harlowe, SugarCube or Snowman.
+(Those formats already have setter links built in, and they
+write variables differently. This is the Chapbook way.)
+
+To check your story format in Twine: open your story, then
+Story > Details, and look at the Story Format dropdown.
+
+
+WHAT IT DOES
+------------
+Lets a normal Twine link set or change a variable at the moment
+the player clicks it, before the next passage loads. Chapbook
+doesn't do this on its own. Example uses:
+
+ - Clicking "Be kind" adds 1 to trust, "Be rude" subtracts 1.
+ - Several links go to the same passage, each saving a
+   different value first.
+ - A link whose text is different from the value it stores.
+
+It's an "extension" (an add-on written in JavaScript). There's
+nothing to download. You paste it in once and it works.
+
+Credit: the idea comes from community setter-link code by
+hituro and David Donachie (Chapbook GitHub issue #90). This
+version is rewritten to use Twine's normal link format.
+
+
+INSTALLATION
+------------
+You do this once for every story (project). It does not carry
+over to new stories. Each new story needs it pasted in again.
+
+ 1. Open your story in Twine 2.
+
+ 2. In the top menu, click Story, then click JavaScript.
+
+ 3. Click inside the text box. If there is already code there,
+    leave it alone. Jump to the very bottom (Ctrl+End on
+    Windows, Cmd+Down arrow on Mac), then press Enter once
+    or twice to leave a blank line.
+
+ 4. Copy everything between the START and END lines below, and
+    paste it at the bottom.
+
+ 5. Close the window. Twine saves automatically.
+
+Does order matter? No. Underneath any existing code is fine.
+Paste it once only. Make sure the code already in the box isn't
+cut off halfway.
+
+
+HOW TO USE IT IN A PASSAGE
+--------------------------
+Write your link as normal, then add a second set of square
+brackets straight after it with the change inside:
+
+  [[Label->Passage name][variable: value]]
+
+Examples:
+
+  Set a number:
+  [[Take the coin.->Shop][coins: 1]]
+
+  Add to a number:
+  [[Be kind.->Reply][trust: trust + 1]]
+
+  Save a word or name:
+  [[Pick Sam.->Reply][guess: "Sam"]]
+
+  Change several things at once (separate with a semicolon):
+  [[Be rude.->Reply][trust: trust - 1; mood: "angry"]]
+
+The other link styles work too:
+  [[Label|Passage name][variable: value]]
+  [[Passage name<-Label][variable: value]]
+
+Rules:
+
+ 1. Words (text) go in double quotes, like "Sam". Numbers and
+    other variables don't need quotes. So coins: 1 and
+    trust: trust + 1 are fine, but name: Sam is not.
+
+ 2. Use plain straight quotes. If you type in a word processor
+    first, it may turn them into curly quotes.
+
+ 3. The variable doesn't need to be set up first if you're
+    giving it a plain value. coins: 1 works even if coins has
+    never existed. But anything that uses the variable's
+    current value, like coins: coins + 1, needs it to exist
+    already. Give it a starting value in the first passage of
+    your story, in a vars section at the very top:
+      coins: 0
+      --
+
+ 4. Don't use these inside the brackets: a semicolon (except
+    between changes), a vertical bar |, an arrow -> or <-,
+    or two square brackets together ]].
+
+ 5. The variable is only changed when the link is clicked. The
+    passage you land on already has the new value.
+
+To test: put {coins} (or your variable's name) in the passage
+the link goes to, click the link, and check the value changed.
+
+
+GOOD TO KNOW
+------------
+ - Twine's story map still draws the arrows for these links as
+   normal. It ignores the second set of brackets.
+ - If you only need to know WHICH link was clicked, Chapbook
+   2.2.0 and newer has this built in. Use passage.fromText in
+   the next passage's vars section: guess: passage.fromText
+ - These links skip Chapbook's check for required text inputs.
+   A normal link won't go forward if a required input is empty.
+   A setter link will.
+ - If a change can't be made (for example trust: trust + 1 when
+   trust was never set up), Chapbook shows its error screen
+   instead of moving on.
+ - If you see the raw [[...][...]] text or the link goes to a
+   passage that doesn't exist, the code didn't save properly.
+   Re-open Story > JavaScript and check the whole block is there.
+
+
+--------------------------------------------------------------
+CODE (paste into Story > JavaScript)
+--------------------------------------------------------------
+
+// ===== START: Setter Links for Chapbook (copy from this line down to the END line) =====
+
+engine.extend('2.0.0', () => {
+  window.addEventListener('click', (event) => {
+    const link = event.target.closest('passage-link');
+    if (!link) return;
+
+    const parts = (link.getAttribute('to') || '').split('][');
+    if (parts.length < 2) return;
+
+    event.stopPropagation();
+
+    const passage = parts[0].trim();
+    const changes = parts.slice(1).join('][')
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2018\u2019]/g, "'")
+      .split(';')
+      .map((change) => change.trim())
+      .join('\n');
+
+    engine.template.render(changes + '\n--');
+    link.dispatchEvent(new CustomEvent('passage-navigate', { bubbles: true }));
+    window.go(passage);
+  }, true);
+});
+
+// ===== END: Setter Links for Chapbook (copy down to this line) =====

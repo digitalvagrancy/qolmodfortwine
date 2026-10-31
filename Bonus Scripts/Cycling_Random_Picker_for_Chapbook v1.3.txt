@@ -1,0 +1,255 @@
+==============================================================
+CYCLING RANDOM PICKER FOR CHAPBOOK
+An extension for Twine 2 stories (Chapbook story format)
+==============================================================
+
+WORKS WITH
+----------
+Chapbook only (version 2.0.0 or newer), inside Twine 2.
+It will NOT work in Harlowe, SugarCube or Snowman.
+
+To check your story format in Twine: open your story, then
+Story > Details, and look at the Story Format dropdown.
+
+
+WHAT IT DOES
+------------
+Picks one option at random from a list you write. While it
+decides, the options flicker past quickly (faded), slow down,
+and then lock in on the final pick (solid). The result is saved
+in a variable so you can use it later in your story.
+
+The flickering options don't need to be readable. They are
+there to show that other options existed.
+
+
+WHAT IS THIS, TECHNICALLY?
+--------------------------
+It is an "extension" (or "add-on") for Chapbook. In Chapbook's
+own terms it is a "custom insert". It is not a plugin, because
+there is nothing to download or switch on. You paste it into your
+story once, and then it works.
+
+
+WHAT YOU CAN TWEAK, AND WHERE
+-----------------------------
+Inside the code (Part 1 below), look for the line that says
+"SETTINGS YOU CAN CHANGE". Only change the numbers, nothing else.
+
+ 1. delay = 20
+    How fast it flickers at the start, in milliseconds per swap.
+    Lower = faster start. Higher = slower start.
+
+ 2. slowdown = 1.3
+    How quickly it slows down. Higher = slows down faster, so a
+    shorter spin. Lower (such as 1.15) = a longer, gentler spin.
+
+ 3. stopAt = 450
+    How slow it must get before it locks onto the final pick.
+    Higher = a longer spin with slower final steps.
+
+ 4. opacity = 0.25
+    How see-through the options are while cycling.
+    0 = invisible, 1 = solid. The final pick is always solid.
+
+ With the default settings the spin takes about 2 seconds.
+
+You can also change these in the passage where you use it:
+
+ 5. delay: 1000  (optional, written in the passage, not the code)
+    Waits that many milliseconds before the spin starts.
+    1000 = 1 second. Useful if the picker appears on screen
+    before you want it to start.
+
+And one optional style in Part 2:
+
+ 6. min-width (optional, in the Stylesheet)
+    Stops the surrounding text from jumping around when the
+    options have different lengths.
+
+
+INSTALLATION
+------------
+You do this once for every story (project) you want to use it
+in. It does not carry over to new stories. Each new story needs
+the code pasted in again.
+
+ 1. Open your story in Twine 2.
+
+ 2. In the top menu, click Story, then click JavaScript.
+
+ 3. Click inside the text box. If there is already code there,
+    leave it alone. Jump to the very bottom (press Ctrl+End on
+    Windows, or Cmd+Down arrow on Mac), then press Enter once
+    or twice to leave a blank line.
+
+ 4. Copy ALL of Part 1 below, from the line that says
+    "START: Cycling Random Picker" down to the line that says
+    "END: Cycling Random Picker", and paste it at the bottom.
+
+ 5. Close that window. Twine saves automatically.
+
+ 6. OPTIONAL: click Story, then Stylesheet. Go to the bottom
+    the same way, and paste Part 2 below your existing styles.
+    Close the window.
+
+Does order matter? Not really. Pasting it underneath any
+existing code is fine. Only two things matter:
+ - Paste it once only. Pasting it twice will make it run twice.
+ - Make sure the code already in the box isn't cut off halfway.
+   If it was working before, it's fine.
+
+
+HOW TO USE IT IN A PASSAGE
+--------------------------
+Type this into any passage, with your own options and a name
+for the result:
+
+  {random picker, choices: ['Option one', 'Option two', 'Option three'], variable: 'myResult'}
+
+ - Use plain straight quotes ' around each option. If you type
+   it in a word processor first, it may turn them into curly
+   quotes and break it.
+ - The winning option is saved in a variable with the name you
+   chose (here, myResult). You can show it anywhere later with
+   {myResult}.
+ - To make the spin wait before starting, add a delay in
+   milliseconds:
+   {random picker, choices: ['A', 'B', 'C'], variable: 'myResult', delay: 1000}
+ - To use a list you made earlier in a vars section, write its
+   name without quotes: choices: myList
+
+
+GOOD TO KNOW
+------------
+ - If the variable already has a value when the passage loads,
+   the picker skips the spin and just shows that value. So do
+   not set the variable yourself in a vars section beforehand.
+   This also keeps the result the same if the player goes back.
+ - The result is saved the moment the passage loads, so don't
+   show {myResult} in the same passage if you want to keep it
+   a surprise until the spin ends.
+ - If the picker sits inside a reveal or a timed section, the
+   spin waits until it is actually visible before starting.
+ - If you see the raw {random picker, ...} text instead of the
+   effect, the code didn't save properly. Re-open Story >
+   JavaScript and check that the whole of Part 1 is there.
+ - If you only ever see "..." and nothing spins, open your story
+   in the Test view, press F12, click the Console tab, and look
+   for red error text.
+
+
+==============================================================
+PART 1: STORY JAVASCRIPT (required)
+Paste this into Story > JavaScript, underneath any existing code.
+==============================================================
+
+// ===== START: Cycling Random Picker for Chapbook (copy from this line down to the END line) =====
+
+engine.extend('2.0.0', () => {
+  let counter = 0;
+
+  engine.template.inserts.add({
+    match: /^random picker$/i,
+    render(firstArg, props) {
+      const choices = props.choices;
+      if (!Array.isArray(choices) || choices.length === 0) {
+        return '[random picker needs a choices list]';
+      }
+
+      const varName = props.variable;
+
+      if (varName) {
+        const existing = engine.state.get(varName);
+        if (existing !== undefined) {
+          return '<span class=random-picker>' + existing + '</span>';
+        }
+      }
+
+      const finalIndex = Math.floor(Math.random() * choices.length);
+      const final = String(choices[finalIndex]);
+      if (varName) engine.state.set(varName, choices[finalIndex]);
+
+      const id = 'random-picker-' + (counter++);
+
+      const startSpinning = (el) => {
+        // ---------- SETTINGS YOU CAN CHANGE ----------
+        let delay = 20;         // starting speed in milliseconds per swap (lower = faster start)
+        const slowdown = 1.3;   // how quickly it slows down (higher = slows down faster, shorter spin)
+        const stopAt = 450;     // how slow it gets before locking in (higher = longer spin)
+        // (the next line is not a setting, leave it alone)
+        let last = -1;
+        el.style.opacity = 0.25; // how see-through the options are while cycling (0 = invisible, 1 = solid)
+        // ---------- END OF SETTINGS ----------
+
+        const step = () => {
+          if (!el.isConnected) return;
+
+          if (delay > stopAt) {
+            el.textContent = final;
+            el.style.opacity = 1;
+            el.classList.add('locked');
+            return;
+          }
+
+          const nextIsFinal = delay * slowdown > stopAt;
+          let i;
+          do {
+            i = Math.floor(Math.random() * choices.length);
+          } while (
+            choices.length > 1 &&
+            (i === last || (nextIsFinal && i === finalIndex))
+          );
+          last = i;
+
+          el.textContent = String(choices[i]);
+          delay *= slowdown;
+          setTimeout(step, delay);
+        };
+
+        step();
+      };
+
+      // Optional: add  delay: 1000  inside the picker in your passage to wait 1 second before it starts
+      const extraDelay = Number(props.delay) || 0;
+      let tries = 0;
+      const findIt = () => {
+        const el = document.getElementById(id);
+        const visible = el && (el.checkVisibility
+          ? el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })
+          : el.getClientRects().length > 0);
+
+        if (visible) {
+          setTimeout(() => startSpinning(el), extraDelay);
+        } else if (tries < 6000) {
+          tries++;
+          setTimeout(findIt, 50);
+        }
+      };
+      setTimeout(findIt, 0);
+
+      return '<span id=' + id + ' class=random-picker>\u2026</span>';
+    }
+  });
+});
+
+// ===== END: Cycling Random Picker for Chapbook (copy down to this line) =====
+
+
+--------------------------------------------------------------
+PART 2: STORY STYLESHEET (optional, but recommended)
+Paste this into Story > Stylesheet, underneath any existing styles.
+This makes the options fade smoothly instead of snapping.
+--------------------------------------------------------------
+
+/* ===== START: Cycling Random Picker styles (copy from this line down to the END line) ===== */
+
+.random-picker {
+  display: inline-block;
+  transition: opacity 0.15s;
+  /* Optional: remove the two characters at each end of the next line to stop the text jumping around.
+     Make the number bigger if your longest option is cut off. */
+  /* min-width: 8em; */
+}
+
+/* ===== END: Cycling Random Picker styles (copy down to this line) ===== */
