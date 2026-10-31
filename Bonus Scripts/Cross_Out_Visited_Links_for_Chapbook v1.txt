@@ -1,0 +1,158 @@
+==============================================================
+CROSS OUT VISITED LINKS FOR CHAPBOOK
+An extension for Twine 2 stories (Chapbook story format)
+==============================================================
+
+WORKS WITH
+----------
+Chapbook only (version 2.0.0 or newer), inside Twine 2.
+It will NOT work in Harlowe, SugarCube or Snowman.
+
+To check your story format in Twine: open your story, then
+Story > Details, and look at the Story Format dropdown.
+
+
+WHAT IT DOES
+------------
+Automatically crosses out a link once the player has already
+visited the passage it leads to. Great for conversation menus,
+where you want the player to see which options they've used.
+
+ - Only links you mark are affected. All other links are left alone.
+ - A crossed-out option can't be clicked again.
+ - You don't need to write an if/else for every option. Just
+   mark the link, and it works out the rest.
+
+It's an "extension" (an add-on written in JavaScript). There's
+nothing to download. You paste it in once and it works.
+
+
+WHAT YOU CAN TWEAK, AND WHERE
+-----------------------------
+ 1. How faded crossed-out options look. In Part 2 (the
+    Stylesheet), change the number after "opacity". Lower =
+    fainter (0.25 is quite faint). 1 = not faded at all.
+
+
+INSTALLATION
+------------
+You do this once for every story (project). It does not carry
+over to new stories. Each new story needs it pasted in again.
+
+ 1. Open your story in Twine 2.
+
+ 2. In the top menu, click Story, then click JavaScript.
+
+ 3. Click inside the text box. If there is already code there,
+    leave it alone. Jump to the very bottom (Ctrl+End on
+    Windows, Cmd+Down arrow on Mac), then press Enter once
+    or twice to leave a blank line.
+
+ 4. Copy ALL of Part 1 below, from the line that says
+    "START: Cross Out Visited Links" down to the line that says
+    "END: Cross Out Visited Links", and paste it at the bottom.
+
+ 5. Close that window. Twine saves automatically.
+
+ 6. Click Story, then Stylesheet. Go to the bottom the same
+    way, and paste Part 2 below your existing styles. This
+    makes crossed-out options look faded. Close the window.
+
+Does order matter? No. Underneath any existing code is fine.
+Paste each part once only. Make sure the code already in the
+box isn't cut off halfway.
+
+
+HOW TO USE IT IN A PASSAGE
+--------------------------
+Wrap any link you want crossed out after visiting like this:
+
+  <span class="cross">[[Label.->Passage name]]</span>
+
+Example menu:
+
+  <span class="cross">[[Ask about his demands.->Demands]]</span>
+  <span class="cross">[[Ask about the hostages.->Hostages]]</span>
+  <span class="cross">[[Ask about the deadline.->Deadline]]</span>
+
+Rules:
+
+ 1. Use plain straight quotes in class="cross". If you type in
+    a word processor first, it may turn them into curly quotes
+    and break it.
+
+ 2. Every other link style works inside the wrapper too,
+    including [[Label|Passage]] and setter links like
+    [[Label->Passage][coins: coins + 1]].
+
+ 3. Links without the wrapper behave as normal and are never
+    crossed out.
+
+ 4. If your options run together on one line instead of
+    appearing one per line, add <br> at the end of each line.
+    (Or use the "Preserve Line Breaks for Chapbook" tweak.)
+
+To test: click one option, then go back to the passage with
+the menu. The option you clicked should now be crossed out and
+faded, and the others should still be clickable.
+
+
+GOOD TO KNOW
+------------
+ - A link is checked once, at the moment it first appears on
+   screen. It isn't updated while the player is still reading
+   that same passage.
+ - "Visited" means the player has been to that passage during
+   this playthrough. Restarting the story resets it.
+ - The fade in Part 2 applies to all crossed-out (<del>) text
+   in your story, including any you write yourself.
+ - If nothing gets crossed out, check that the whole of Part 1
+   saved (Story > JavaScript), and that the wrapper reads
+   exactly <span class="cross"> with straight quotes.
+
+
+==============================================================
+PART 1: STORY JAVASCRIPT (required)
+Paste this into Story > JavaScript, underneath any existing code.
+==============================================================
+
+// ===== START: Cross Out Visited Links for Chapbook (copy from this line down to the END line) =====
+
+engine.extend('2.0.0', () => {
+  const crossOutVisited = () => {
+    const trail = engine.state.get('trail') || [];
+
+    document.querySelectorAll('.cross passage-link').forEach(link => {
+      if (link.dataset.crossChecked) return;
+      link.dataset.crossChecked = 'yes';
+
+      const passage = (link.getAttribute('to') || '').split('][')[0].trim();
+      if (trail.includes(passage)) {
+        const del = document.createElement('del');
+        del.innerHTML = link.innerHTML;
+        link.replaceWith(del);
+      }
+    });
+  };
+
+  new MutationObserver(crossOutVisited).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+});
+
+// ===== END: Cross Out Visited Links for Chapbook (copy down to this line) =====
+
+
+--------------------------------------------------------------
+PART 2: STORY STYLESHEET (recommended)
+Paste this into Story > Stylesheet, underneath any existing styles.
+--------------------------------------------------------------
+
+/* ===== START: Cross Out Visited Links styles (copy from this line down to the END line) ===== */
+
+del {
+  opacity: 0.25; /* how faded crossed-out options look (lower = fainter, 1 = not faded) */
+}
+
+/* ===== END: Cross Out Visited Links styles (copy down to this line) ===== */
