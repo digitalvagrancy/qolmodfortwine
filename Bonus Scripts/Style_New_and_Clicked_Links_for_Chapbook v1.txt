@@ -1,0 +1,210 @@
+==============================================================
+STYLE NEW AND CLICKED LINKS FOR CHAPBOOK
+An extension for Twine 2 stories (Chapbook story format)
+==============================================================
+
+WORKS WITH
+----------
+Chapbook only (version 2.2.0 or newer), inside Twine 2.
+It will NOT work in Harlowe, SugarCube or Snowman.
+
+To check your story format in Twine: open your story, then
+Story > Details, and look at the Story Format dropdown.
+
+
+WHAT IT DOES
+------------
+Lets you give links a different look depending on whether the
+player has clicked them before. This helps players see which
+choices they've already tried and which are still new.
+
+ - It works on all the links in your passage text automatically.
+   There is nothing to add to your passages.
+ - It remembers clicks even if the player restarts the story.
+ - A "link" here means "this passage to that passage". The
+   wording on the link doesn't matter. The same destination
+   linked from a different passage counts as a new choice.
+
+By default, new links look completely normal and links that
+have been clicked are slightly faded. You can change both.
+
+It's an "extension" (an add-on written in JavaScript). There's
+nothing to download. You paste it in once and it works.
+
+
+WHAT YOU CAN TWEAK, AND WHERE
+-----------------------------
+ 1. How new links look, and how clicked links look. In Part 2
+    (the Stylesheet) there are two small sections, one for each.
+    Add any styles you like inside the curly brackets { }.
+    The notes at the top of Part 2 explain the details.
+
+ 2. How faded clicked links are. In Part 2, in the CLICKED
+    LINKS section, change the number after "opacity". 1 = solid,
+    0 = invisible. Lower = fainter. 0.9 is a very light fade.
+
+ 3. How long clicks are remembered. In Part 1, find the line
+    that says "const storage". The default, sessionStorage,
+    remembers through restarts and page refreshes, but forgets
+    when the player closes the browser tab. Change it to
+    localStorage to remember even after closing the browser.
+
+
+INSTALLATION
+------------
+You do this once for every story (project). It does not carry
+over to new stories. Each new story needs it pasted in again.
+
+ 1. Open your story in Twine 2.
+
+ 2. In the top menu, click Story, then click JavaScript.
+
+ 3. Click inside the text box. If there is already code there,
+    leave it alone. Jump to the very bottom (Ctrl+End on
+    Windows, Cmd+Down arrow on Mac), then press Enter once
+    or twice to leave a blank line.
+
+ 4. Copy ALL of Part 1 below, from the line that says
+    "START: Style New and Clicked Links" down to the line that
+    says "END: Style New and Clicked Links", and paste it at
+    the bottom.
+
+ 5. Close that window. Twine saves automatically.
+
+ 6. Click Story, then Stylesheet. Go to the bottom the same
+    way, and paste Part 2 below your existing styles. This
+    is what controls how the links look. Close the window.
+
+Does order matter? No. Underneath any existing code is fine.
+Paste each part once only. Make sure the code already in the
+box isn't cut off halfway.
+
+
+TO TEST IT
+----------
+Open your story with Test or Play. Click a link, then come back
+to that passage (or restart the story). That link should now
+look faded, and the links you haven't clicked should look normal.
+
+Note: each time you press Test or Play in Twine, it opens a
+fresh browser tab, so the memory starts empty again.
+
+
+GOOD TO KNOW
+------------
+ - Only links in the main passage text are affected. Links in
+   the header or footer are left alone.
+ - Setter links, like [[Label->Passage][coins: coins + 1]],
+   work too, as long as you're using the "Setter Links for
+   Chapbook" extension.
+ - Restarting the story reloads the page, so a restart can't
+   be treated differently from a refresh. That's why the
+   memory is kept in the browser rather than in the story.
+ - A link's look is decided once, when it first appears on
+   screen.
+ - If nothing changes, check that both parts saved, and that
+   your Chapbook version is 2.2.0 or newer.
+
+
+==============================================================
+PART 1: STORY JAVASCRIPT (required)
+Paste this into Story > JavaScript, underneath any existing code.
+==============================================================
+
+// ===== START: Style New and Clicked Links for Chapbook (copy from this line down to the END line) =====
+
+engine.extend('2.2.0', () => {
+  const storage = window.sessionStorage; // change sessionStorage to localStorage to also remember after the browser is closed
+  const storageKey = 'clicked-links:' + document.title;
+
+  const clicked = (() => {
+    try {
+      return new Set(JSON.parse(storage.getItem(storageKey)) || []);
+    } catch (error) {
+      return new Set();
+    }
+  })();
+
+  const markLinks = () => {
+    const trail = engine.state.get('trail') || [];
+    const here = trail[trail.length - 1];
+
+    document.querySelectorAll('article passage-link').forEach(link => {
+      if (link.dataset.choiceKey) return;
+
+      const target = (link.getAttribute('to') || '').split('][')[0].trim();
+      const key = here + ' -> ' + target;
+      link.dataset.choiceKey = key;
+
+      link.classList.add(clicked.has(key) ? 'clicked-choice' : 'new-choice');
+    });
+  };
+
+  window.addEventListener('passage-navigate', event => {
+    const link = event.target.closest('passage-link');
+    if (!link || !link.dataset.choiceKey) return;
+
+    clicked.add(link.dataset.choiceKey);
+    try {
+      storage.setItem(storageKey, JSON.stringify([...clicked]));
+    } catch (error) {}
+  });
+
+  new MutationObserver(markLinks).observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+});
+
+// ===== END: Style New and Clicked Links for Chapbook (copy down to this line) =====
+
+
+--------------------------------------------------------------
+PART 2: STORY STYLESHEET (required)
+Paste this into Story > Stylesheet, underneath any existing styles.
+--------------------------------------------------------------
+
+/* ===== START: Style New and Clicked Links (copy from this line down to the END line) =====
+
+   NOTES
+   1. Links the player has never clicked get the class "new-choice".
+      Links they have clicked get the class "clicked-choice".
+      The two sections below style each one.
+
+   2. Add your styles inside the curly brackets { } of a section,
+      one per line, each ending in a semicolon. For example:
+        color: red;
+        font-weight: bold;
+        opacity: 0.5;
+
+   3. These sections are already strong enough to beat Chapbook's
+      normal link style, so you usually don't need anything extra.
+      If a style you add has no effect, put !important before
+      the semicolon, like this:
+        color: red !important;
+
+   4. A colour, background or underline colour you set here also
+      shows while the mouse is over the link, which replaces
+      Chapbook's normal hover look. To keep the normal hover
+      look, add this extra section underneath (change
+      "clicked-choice" to "new-choice" for new links):
+        #page .link.clicked-choice:hover {
+          color: var(--page-link-active-color);
+          background-color: var(--page-link-active-background-color);
+        }
+
+   5. Opacity fades the whole link, including its underline.
+      1 = solid, 0 = invisible. Lower = fainter.
+*/
+
+/* ---------- NEW LINKS: links the player has not clicked yet ---------- */
+#page .link.new-choice {
+  /* add your styles for new links here */
+}
+
+/* ---------- CLICKED LINKS: links the player has clicked before ---------- */
+#page .link.clicked-choice {
+  opacity: 0.9; /* how faded clicked links look (1 = solid, 0 = invisible, lower = fainter) */
+}
+
+/* ===== END: Style New and Clicked Links (copy down to this line) ===== */
